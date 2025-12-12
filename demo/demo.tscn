@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://dl2c605m5it3r"]
+
+[ext_resource type="ArrayMesh" uid="uid://38uejo5uda4g" path="res://demo/teapot1.vox" id="1_d6po2"]
+[ext_resource type="ArrayMesh" uid="uid://cgwj1wb77lnd5" path="res://demo/teapot2.vox" id="2_ytiva"]
+[ext_resource type="ArrayMesh" uid="uid://dakwigc2361vv" path="res://demo/cars.vox" id="3_dar0o"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Teapot1" type="MeshInstance3D" parent="."]
+visible = false
+mesh = ExtResource("1_d6po2")
+
+[node name="Teapot2" type="MeshInstance3D" parent="."]
+visible = false
+mesh = ExtResource("2_ytiva")
+
+[node name="Cars" type="MeshInstance3D" parent="."]
+mesh = ExtResource("3_dar0o")

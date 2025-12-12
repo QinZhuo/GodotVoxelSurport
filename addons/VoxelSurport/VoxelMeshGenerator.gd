@@ -1,0 +1,109 @@
+class_name VoxelMeshGenerator
+
+var face_tool: SurfaceTool = SurfaceTool.new()
+var pos_min: Vector3i
+var pos_max: Vector3i
+var slice_voxels: Array[Dictionary]
+var scale: float
+
+func generate(voxel_data: VoxelData, scale: float):
+	var voxels := voxel_data.get_voxels()
+	self.scale = scale
+	pos_min = Vector3i.MAX
+	pos_max = Vector3i.MIN
+	
+	face_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	
+	if voxels.size() == 0:
+		return face_tool.commit()
+
+	slice_voxels = [ {}, {}, {}]
+
+	for pos in voxels:
+		pos_min.x = min(pos_min.x, pos.x)
+		pos_min.y = min(pos_min.y, pos.y)
+		pos_min.z = min(pos_min.z, pos.z)
+		pos_max.x = max(pos_max.x, pos.x)
+		pos_max.y = max(pos_max.y, pos.y)
+		pos_max.z = max(pos_max.z, pos.z)
+		for axis in 3:
+			var slice_index := pos[axis]
+			var slices := slice_voxels[axis]
+			if not slices.has(slice_index):
+				slices[slice_index] = {}
+			slices[slice_index][pos] = voxels[pos]
+	
+	for dir in FaceTool.Faces.size():
+		var axis := FaceTool.SliceAxis[dir]
+		var slices := slice_voxels[axis.x]
+		for slice_index in range(pos_min[axis.x], pos_max[axis.x] + 1):
+			if slices.has(slice_index):
+				var slice_voxels := get_dir_visible_slice_voxels(slices, axis, dir, slice_index)
+				if slice_voxels.size() > 0:
+					var slice = slices[slice_index]
+					for pos in slice:
+						if slice_voxels.has(pos):
+							generate_voxel_dir_face(slice_voxels, axis, pos, dir)
+		
+	var material = StandardMaterial3D.new()
+	face_tool.set_material(material)
+	return face_tool.commit()
+
+
+func get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int, slice_index: int) -> Dictionary[Vector3i, int]:
+	var voxels: Dictionary[Vector3i, int]
+	var offset := Vector3i(FaceTool.Normals[dir])
+	var slice: Dictionary = slices[slice_index]
+	var dir_slice_index := slice_index + offset[axis.x]
+	if not slices.has(dir_slice_index):
+		voxels.assign(slice)
+		return voxels
+	var dir_slice = slices[dir_slice_index]
+	for pos in slice:
+		if !dir_slice.has(pos + offset):
+			voxels[pos] = slice[pos]
+	return voxels
+
+
+func generate_voxel_dir_face(voxels: Dictionary[Vector3i, int], axis: Vector3i, pos: Vector3i, dir: int) -> Dictionary:
+	var y_size: int = get_y_size(voxels, pos, axis.y)
+	var z_size: int = get_z_size(voxels, pos, axis, y_size)
+	var size: Vector3 = Vector3.ONE
+	size[axis.y] = y_size
+	size[axis.z] = z_size
+
+	face_tool.set_normal(FaceTool.Normals[dir])
+	for point: Vector3 in FaceTool.Faces[dir]:
+		face_tool.set_uv(Vector2((voxels[pos] + 0.5) / 256.0, 0.5))
+		face_tool.add_vertex((point * size + Vector3(pos)) * scale)
+
+	var cur_pos := pos
+	for z in range(z_size):
+		cur_pos[axis.y] = pos[axis.y]
+		for y in range(y_size):
+			voxels.erase(cur_pos)
+			cur_pos[axis.y] += 1
+		cur_pos[axis.z] += 1
+	return voxels
+
+func get_y_size(voxels: Dictionary[Vector3i, int], pos: Vector3i, axis_y: int, max_size: int = -1) -> int:
+	var value: int = voxels[pos]
+	var cur_pos: Vector3i = pos
+	cur_pos[axis_y] += 1
+	var size := 1
+	while voxels.has(cur_pos) and voxels[cur_pos] == value:
+		cur_pos[axis_y] += 1
+		size += 1
+		if max_size > 0 and size >= max_size:
+			break
+	return size
+
+func get_z_size(voxels: Dictionary[Vector3i, int], pos: Vector3i, axis: Vector3i, y_size: int) -> int:
+	var value: int = voxels[pos]
+	var cur_pos: Vector3i = pos
+	cur_pos[axis.z] += 1
+	var size := 1
+	while voxels.has(cur_pos) and voxels[cur_pos] == value and get_y_size(voxels, cur_pos, axis.y, y_size) >= y_size:
+		cur_pos[axis.z] += 1
+		size += 1
+	return size
