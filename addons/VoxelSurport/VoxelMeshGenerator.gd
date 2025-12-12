@@ -45,7 +45,7 @@ func generate(voxel_data: VoxelData, scale: float):
 						if slice_voxels.has(pos):
 							generate_voxel_dir_face(slice_voxels, axis, pos, dir)
 		
-	var material = StandardMaterial3D.new()
+	var material := StandardMaterial3D.new()
 	face_tool.set_material(material)
 	return face_tool.commit()
 
@@ -71,10 +71,10 @@ func generate_voxel_dir_face(voxels: Dictionary[Vector3i, int], axis: Vector3i, 
 	var size: Vector3 = Vector3.ONE
 	size[axis.y] = y_size
 	size[axis.z] = z_size
-
+	var uv := Vector2((voxels[pos] + 0.5) / 256.0, 0.5)
 	face_tool.set_normal(FaceTool.Normals[dir])
 	for point: Vector3 in FaceTool.Faces[dir]:
-		face_tool.set_uv(Vector2((voxels[pos] + 0.5) / 256.0, 0.5))
+		face_tool.set_uv(uv)
 		face_tool.add_vertex((point * size + Vector3(pos)) * scale)
 
 	var cur_pos := pos
