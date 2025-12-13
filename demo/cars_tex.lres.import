@@ -1,0 +1,16 @@
+[remap]
+
+importer="voxel_surport.link_res.vol.material"
+type="Material"
+uid="uid://d20r7tbkxpyju"
+path="res://.godot/imported/cars_tex.lres-01613e8d95747790a1b4ee5acde83a9d.res"
+
+[deps]
+
+source_file="res://demo/cars_tex.lres"
+dest_files=["res://.godot/imported/cars_tex.lres-01613e8d95747790a1b4ee5acde83a9d.res"]
+
+[params]
+
+link_path="D:/Work/GodotProject/GodotVoxelSurport/demo/cars.vox"
+import_textures=false

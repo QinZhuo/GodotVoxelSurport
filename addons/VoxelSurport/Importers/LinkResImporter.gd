@@ -12,10 +12,10 @@ func _get_recognized_extensions():
 	return ['lres']
 
 func _get_save_extension():
-	return 'tres'
+	return 'res'
 
 func _get_resource_type():
-	return 'Link'
+	return 'Resource'
 
 func _get_preset_count():
 	return 0
@@ -36,8 +36,14 @@ func _get_import_options(path, preset):
 func _get_option_visibility(path, option, options):
 	return true
 
-func _import(_source_file, _save_path, _options, _platforms, _gen_files):
-	return _save_res(Resource.new(), _save_path, _source_file)
+func _import(source_file, save_path, options, _platforms, _gen_files):
+	var link_path: String = options["link_path"]
+	var res: Resource
+	if link_path:
+		res = ResourceLoader.load(link_path)
+	if not res:
+		return _load_res(save_path, source_file)
+	return _save_res(res, save_path, source_file)
  
 func _load_res(save_path: String, source_path: String) -> Error:
 	var path := str(save_path, '.', _get_save_extension())

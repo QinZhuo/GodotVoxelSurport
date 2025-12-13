@@ -20,6 +20,12 @@ func _get_import_options(path, preset):
 			name = 'scale',
 			default_value = 0.1,
 		},
+		{
+			name = 'material',
+            default_value = "",
+            property_hint = PROPERTY_HINT_FILE,
+            hint_string = "*.lres,*.res,*.tres"
+		}
 	]
 
 func _import(source_file, save_path, options: Dictionary, _platforms, gen_files):
@@ -33,6 +39,9 @@ func _import(source_file, save_path, options: Dictionary, _platforms, gen_files)
 	if not voxel:
 		return _load_res(save_path, source_file)
 	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(voxel, options['scale'])
+	if options["material"]:
+		var material := ResourceLoader.load(options["material"])
+		mesh.surface_set_material(0, material)
 	if not mesh:
 		return _load_res(save_path, source_file)
 	return _save_res(mesh, save_path, source_file)

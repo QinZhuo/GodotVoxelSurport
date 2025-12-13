@@ -20,15 +20,19 @@ func get_voxels() -> Dictionary[Vector3i, int]:
 			prints("get voxels time:", (Time.get_ticks_usec() - time) / 1000.0, "ms", voxels.size(), "voxels")
 	return voxels
 
-func get_material(save_path: String = "") -> StandardMaterial3D:
+func get_material(save_path: String = "", gen_files: Array[String] = []) -> StandardMaterial3D:
 	var time = Time.get_ticks_usec()
 	var material := StandardMaterial3D.new()
-	material.albedo_texture = get_albedo_textrue()
-	material.metallic_texture = get_metal_textrue()
-	material.roughness_texture = get_rough_textrue()
+	material.albedo_texture = get_albedo_textrue(save_path + "_albedo.png")
+	gen_files.append(save_path + "_albedo.png")
+	material.metallic_texture = get_metal_textrue(save_path + "_metal.png")
+	gen_files.append(save_path + "_metal.png")
+	material.roughness_texture = get_rough_textrue(save_path + "_rough.png")
+	gen_files.append(save_path + "_rough.png")
 	material.emission_enabled = true
 	material.emission_energy_multiplier = 16
-	material.emission_texture = get_emission_textrue()
+	material.emission_texture = get_emission_textrue(save_path + "_emission.png")
+	gen_files.append(save_path + "_emission.png")
 	prints("create material time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	return material
 

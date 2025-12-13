@@ -1,18 +1,15 @@
 [remap]
 
 importer="voxel_surport.vol.array_mesh"
-type="Mesh"
+type="ArrayMesh"
 uid="uid://38uejo5uda4g"
-path="res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.mesh"
+path="res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.res"
 
 [deps]
 
 source_file="res://demo/teapot1.vox"
-dest_files=["res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.mesh"]
+dest_files=["res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.res"]
 
 [params]
 
-Scale=0.1
-albedo textrue=false
-rough textrue=false
-roughs textrue=false
+scale=0.1
