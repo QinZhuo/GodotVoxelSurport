@@ -26,8 +26,20 @@ func _get_preset_name(_preset):
 func _get_import_options(path, preset):
 	return [
 		{
-			'name': 'Scale',
-			'default_value': 0.1
+			name = 'Scale',
+			default_value = 0.1
+		},
+		{
+			name = 'albedo textrue',
+			default_value = false
+		},
+		{
+			name = 'rough textrue',
+			default_value = false
+		},
+		{
+			name = 'roughs textrue',
+			default_value = false
 		},
 	]
 
@@ -45,5 +57,7 @@ func _import(source_file, save_path, options, _platforms, _gen_files):
 	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(vox.voxel_data, 0.1)
 	if not mesh:
 		return FAILED
+	var material := (mesh.surface_get_material(0) as StandardMaterial3D)
+	material.albedo_texture = vox.voxel_data.get_albedo_textrue()
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
 	return ResourceSaver.save(mesh, "%s.%s" % [save_path, _get_save_extension()])

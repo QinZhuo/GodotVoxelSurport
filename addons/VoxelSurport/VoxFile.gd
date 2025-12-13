@@ -81,11 +81,19 @@ func read_chunk():
 			voxel_data.materials[material_id] = material
 			var attributes := _get_dictionary()
 			material.type = attributes.get("_type", "diffuse");
-			material.weight = float(attributes.get("_weight", 0));
-			material.specular = float(attributes.get("spec", 0));
-			material.roughness = float(attributes.get("rough", 0));
-			material.flux = float(attributes.get("flux", 0));
-			material.refraction = float(attributes.get("ior", 0));
+
+			material.trans = float(attributes.get("_trans", 0));
+
+			material.metal = float(attributes.get("_metal", 0));
+			material.specular = float(attributes.get("_sp", 1)) / 2;
+
+			material.roughness = float(attributes.get("_rough", 0));
+			
+			material.emission = float(attributes.get("_emit", 0))
+			material.flux = float(attributes.get("_flux", 1));
+			
+			material.refraction = float(attributes.get("_ri", 1.5)) / 3;
+
 		"LAYR":
 			var layer := VoxelData.VoxelLayer.new()
 			layer.id = _get_int()

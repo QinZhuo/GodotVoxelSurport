@@ -7,11 +7,10 @@
 [node name="Node3D" type="Node3D"]
 
 [node name="Teapot1" type="MeshInstance3D" parent="."]
-visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -19.757208)
 mesh = ExtResource("1_d6po2")
 
 [node name="Teapot2" type="MeshInstance3D" parent="."]
-visible = false
 mesh = ExtResource("2_ytiva")
 
 [node name="Cars" type="MeshInstance3D" parent="."]

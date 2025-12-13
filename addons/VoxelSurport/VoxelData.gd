@@ -13,6 +13,13 @@ func get_voxels() -> Dictionary[Vector3i, int]:
 			nodes[0].merge_Voxels(voxels, self)
 	return voxels
 
+func get_albedo_textrue(save_path: String = "") -> ImageTexture:
+	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
+	for x in 256:
+		image.set_pixel(x, 0, colors[x])
+	if save_path:
+		image.save_png(save_path)
+	return ImageTexture.create_from_image(image)
 
 class VoxelModel:
 	var size: Vector3
@@ -25,10 +32,17 @@ class VoxelModel:
 
 class VoxelMaterial:
 	var type: String
-	var weight: float
+
+	var trans: float
+
+	var metal: float
 	var specular: float
+
 	var roughness: float
+
+	var emission: float
 	var flux: float
+
 	var refraction: float
 
 
