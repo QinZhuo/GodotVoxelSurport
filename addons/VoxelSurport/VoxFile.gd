@@ -143,8 +143,10 @@ func _get_node() -> VoxelData.VoxelNode:
 	voxel_data.nodes[node.id] = node
 	return node
 
-
-func _get_rotation(encoded_rot: int) -> Basis:
+static var rot_cache: Dictionary[int, Basis] = {}
+static func _get_rotation(encoded_rot: int) -> Basis:
+	if rot_cache.has(encoded_rot):
+		return rot_cache[encoded_rot]
 	var rotation: Basis
 	var x_axis = ((encoded_rot >> 0) & 0x03)
 	var y_axis = ((encoded_rot >> 2) & 0x03)
@@ -169,4 +171,5 @@ func _get_rotation(encoded_rot: int) -> Basis:
 	rotation.z = Vector3()
 	rotation.z[axis_map[y_axis]] = - y_sign
 
+	rot_cache[encoded_rot] = rotation
 	return rotation
