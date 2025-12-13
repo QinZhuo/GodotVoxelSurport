@@ -177,7 +177,7 @@ static func _get_rotation(encoded_rot: int) -> Basis:
 	rotation.y[axis_map[z_axis]] = z_sign
 	
 	rotation.z = Vector3()
-	rotation.z[axis_map[y_axis]] = - y_sign
+	rotation.z[axis_map[y_axis]] = y_sign
 
 	rot_cache[encoded_rot] = rotation
 	return rotation

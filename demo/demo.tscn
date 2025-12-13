@@ -11,7 +11,6 @@ ssao_enabled = true
 ssil_enabled = true
 sdfgi_enabled = true
 glow_enabled = true
-volumetric_fog_enabled = true
 
 [node name="Node3D" type="Node3D"]
 
