@@ -54,12 +54,12 @@ const import_emission_textrue := "import_emission_textrue"
 func _get_option_visibility(path, option, options):
 	return true
 
-func _import(source_file, save_path, options, _platforms, _gen_files):
+func _import(source_file, save_path, options, _platforms, gen_files):
 	var time = Time.get_ticks_usec()
 	var vox := VoxFile.Open(source_file)
 	if not vox:
 		return FAILED
-	prints("load .vox time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
+	prints("open .vox time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	var voxels := vox.voxel_data.get_voxels()
 	prints("get voxels time:", (Time.get_ticks_usec() - time) / 1000.0, "ms", voxels.size(), "voxels")
 	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(vox.voxel_data, 0.1)
@@ -67,15 +67,25 @@ func _import(source_file, save_path, options, _platforms, _gen_files):
 		return FAILED
 	
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
+	
 	var material := (mesh.surface_get_material(0) as StandardMaterial3D)
+
 	var tex_path := "{0}_albedo.png".format([source_file.trim_suffix(".vox")]) if options[import_albedo_textrue] else ""
 	material.albedo_texture = vox.voxel_data.get_albedo_textrue(tex_path)
+	if tex_path: gen_files.append(tex_path)
+
 	tex_path = "{0}_metal.png".format([source_file.trim_suffix(".vox")]) if options[import_metal_textrue] else ""
 	material.metallic_texture = vox.voxel_data.get_metal_textrue(tex_path)
+	if tex_path: gen_files.append(tex_path)
+
 	tex_path = "{0}_rough.png".format([source_file.trim_suffix(".vox")]) if options[import_rough_textrue] else ""
 	material.roughness_texture = vox.voxel_data.get_rough_textrue(tex_path)
+	if tex_path: gen_files.append(tex_path)
+
 	material.emission_enabled = true
+	material.emission_energy_multiplier = 16
 	tex_path = "{0}_emission.png".format([source_file.trim_suffix(".vox")]) if options[import_emission_textrue] else ""
 	material.emission_texture = vox.voxel_data.get_emission_textrue(tex_path)
-	material.emission_energy_multiplier = 16
+	if tex_path: gen_files.append(tex_path)
+
 	return ResourceSaver.save(mesh, "%s.%s" % [save_path, _get_save_extension()])
