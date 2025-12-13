@@ -7,15 +7,9 @@ path="res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mesh"
 
 [deps]
 
-files=["res://demo/cars_albedo.png", "res://demo/cars_metal.png", "res://demo/cars_rough.png", "res://demo/cars_emission.png"]
-
 source_file="res://demo/cars.vox"
-dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mesh", "res://demo/cars_albedo.png", "res://demo/cars_metal.png", "res://demo/cars_rough.png", "res://demo/cars_emission.png"]
+dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mesh"]
 
 [params]
 
 scale=0.1
-import_albedo_textrue=true
-import_metal_textrue=true
-import_rough_textrue=true
-import_emission_textrue=true

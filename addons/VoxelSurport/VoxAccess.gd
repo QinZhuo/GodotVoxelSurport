@@ -1,6 +1,7 @@
-class_name VoxFile
+class_name VoxAccess
 
-static func Open(path: String) -> VoxFile:
+static func Open(path: String) -> VoxAccess:
+	var time = Time.get_ticks_usec()
 	var file := FileAccess.open(path, FileAccess.READ)
 
 	if file == null:
@@ -9,14 +10,12 @@ static func Open(path: String) -> VoxFile:
 	var id = file.get_buffer(4).get_string_from_ascii()
 	if id != "VOX ":
 		file.close()
-		file = null
 		return null
 	
 	var version = file.get_32()
-	var vox := VoxFile.new(file)
-	
+	var vox := VoxAccess.new(file)
+	prints("open .vox time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	file.close()
-	file = null
 	return vox
 
 func _init(file: FileAccess):
@@ -177,7 +176,7 @@ static func _get_rotation(encoded_rot: int) -> Basis:
 	rotation.y[axis_map[z_axis]] = z_sign
 	
 	rotation.z = Vector3()
-	rotation.z[axis_map[y_axis]] = y_sign
+	rotation.z[axis_map[y_axis]] = - y_sign
 
 	rot_cache[encoded_rot] = rotation
 	return rotation

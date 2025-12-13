@@ -1,16 +1,23 @@
 class_name VoxelData
 
 var models: Array[VoxelModel]
+
 var colors: Array[Color]
+
 var materials: Dictionary[int, VoxelMaterial]
+
 var nodes: Dictionary[int, VoxelNode]
+
 var layers: Dictionary[int, VoxelLayer]
+
 var voxels: Dictionary[Vector3i, int]
 
 func get_voxels() -> Dictionary[Vector3i, int]:
 	if voxels.size() == 0:
 		if nodes.size() > 0:
+			var time = Time.get_ticks_usec()
 			nodes[0].merge_Voxels(voxels, self)
+			prints("get voxels time:", (Time.get_ticks_usec() - time) / 1000.0, "ms", voxels.size(), "voxels")
 	return voxels
 
 func get_albedo_textrue(save_path: String = "") -> ImageTexture:
@@ -50,9 +57,12 @@ func get_emission_textrue(save_path: String = "") -> ImageTexture:
 		image.save_png(save_path)
 	return ImageTexture.create_from_image(image)
 
+
 class VoxelModel:
 	var size: Vector3
+	
 	var voxels: Dictionary[Vector3i, int]
+	
 	func merge_Voxels(target_voxels: Dictionary[Vector3i, int]):
 		var offset: Vector3i = (size / 2).floor()
 		for pos in voxels:
@@ -65,22 +75,29 @@ class VoxelMaterial:
 	var trans: float = 0
 
 	var metal: float = 0
+
 	var specular: float = 0.5
 
 	var roughness: float = 1
 
 	var emission: float = 0
+
 	var flux: float = 1
 
 	var refraction: float = 0.5
 
-
 class VoxelNode:
 	var id: int
+	
 	var attributes: Dictionary[String, String]
+	
 	var layerId := -1
+	
 	var child_nodes: Array[int]
+	
 	var frames: Array[VoxelFrame]
+	
+	var voxels: Dictionary[Vector3i, int]
 
 	func get_frame(index: int) -> VoxelFrame:
 		if index >= frames.size():
@@ -88,8 +105,6 @@ class VoxelNode:
 		if not frames[index]:
 			frames[index] = VoxelFrame.new()
 		return frames[index]
-
-	var voxels: Dictionary[Vector3i, int]
 	
 	func merge_Voxels(target_voxels: Dictionary[Vector3i, int], voxel: VoxelData, frame_index: int = 0):
 		get_Voxels(voxel, frame_index)
@@ -125,10 +140,13 @@ class VoxelNode:
 		
 class VoxelFrame:
 	var model_id: int = -1
+	
 	var position: Vector3
+	
 	var rotation: Basis
 
 
 class VoxelLayer:
 	var id: int;
+	
 	var isVisible: bool;

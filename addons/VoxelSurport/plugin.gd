@@ -5,6 +5,7 @@ var importers: Array[EditorImportPlugin]
 
 func _enter_tree():
 	importers.append(VoxArrayMeshImporter.new())
+	importers.append(VoxelArrayMeshImporter.new())
 	for importer in importers:
 		add_import_plugin(importer)
 

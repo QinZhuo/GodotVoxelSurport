@@ -7,6 +7,7 @@ var scale: float
 var thread_datas: Array[ThreadData] = []
 
 func generate(voxel_data: VoxelData, scale: float) -> Mesh:
+	var time = Time.get_ticks_usec()
 	var voxels := voxel_data.get_voxels()
 	self.scale = scale
 	pos_min = Vector3i.MAX
@@ -49,7 +50,15 @@ func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 
 	var material := StandardMaterial3D.new()
 	main_surface.set_material(material)
-	return main_surface.commit()
+	material.albedo_texture = voxel_data.get_albedo_textrue()
+	material.metallic_texture = voxel_data.get_metal_textrue()
+	material.roughness_texture = voxel_data.get_rough_textrue()
+	material.emission_enabled = true
+	material.emission_energy_multiplier = 16
+	material.emission_texture = voxel_data.get_emission_textrue()
+	var mesh := main_surface.commit()
+	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
+	return mesh
 
 
 func _generate_dir_face(dir: int) -> void:
@@ -131,9 +140,7 @@ func _get_z_size(voxels: Dictionary, pos: Vector3i, axis: Vector3i, y_size: int)
 class ThreadData:
 	var dir: int
 	var surface: SurfaceTool
-	var thread: Thread
 	
 	func _init(p_dir: int, p_tool: SurfaceTool):
 		dir = p_dir
 		surface = p_tool
-		thread = Thread.new()

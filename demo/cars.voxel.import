@@ -1,0 +1,16 @@
+[remap]
+
+importer="voxel_surport.voxel.array_mesh"
+type="Mesh"
+uid="uid://bnje2x2smb5p7"
+path="res://.godot/imported/cars.voxel-f5c313d8d078196af4fb343fc0d53a6b.mesh"
+
+[deps]
+
+source_file="res://demo/cars.voxel"
+dest_files=["res://.godot/imported/cars.voxel-f5c313d8d078196af4fb343fc0d53a6b.mesh"]
+
+[params]
+
+scale=0.1
+from_path="D:/Work/GodotProject/GodotVoxelSurport/demo/cars.vox"
