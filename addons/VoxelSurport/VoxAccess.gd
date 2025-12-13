@@ -24,7 +24,6 @@ func _init(file: FileAccess):
 	while file.get_position() < file.get_length():
 		read_chunk()
 
-
 var voxel_data: VoxelData
 var _file: FileAccess
 var _chunk_size = 0
@@ -62,7 +61,7 @@ func read_chunk():
 					var position := frame_attributes['_t'].split_floats(' ')
 					frame.position = Vector3(position[0], position[2], -position[1])
 				if frame_attributes.has('_r'):
-					frame.rotation = _get_rotation(int(frame_attributes['_r']))
+					frame.rotation = decode_rotation(int(frame_attributes['_r']))
 		"nGRP":
 			var node := _get_node()
 			for i in _get_int():
@@ -151,32 +150,30 @@ func _get_node() -> VoxelData.VoxelNode:
 	return node
 
 static var rot_cache: Dictionary[int, Basis] = {}
-static func _get_rotation(encoded_rot: int) -> Basis:
-	if rot_cache.has(encoded_rot):
-		return rot_cache[encoded_rot]
-	var rotation: Basis
-	var x_axis = ((encoded_rot >> 0) & 0x03)
-	var y_axis = ((encoded_rot >> 2) & 0x03)
+func decode_rotation(byte_value: int) -> Basis:
+	if rot_cache.has(byte_value):
+		return rot_cache[byte_value]
+		
+	var row0_index = byte_value & 3
+	var row1_index = (byte_value >> 2) & 3
+	var row2_index = 3 - row0_index - row1_index
 	
-	var axes = [0, 1, 2]
-	axes.erase(x_axis)
-	axes.erase(y_axis)
-	var z_axis = axes[0]
-
-	var x_sign = 1 if ((encoded_rot >> 4) & 0x01) == 0 else -1
-	var y_sign = 1 if ((encoded_rot >> 5) & 0x01) == 0 else -1
-	var z_sign = 1 if ((encoded_rot >> 6) & 0x01) == 0 else -1
+	var sign0 = 1 if ((byte_value >> 4) & 1) == 0 else -1
+	var sign1 = 1 if ((byte_value >> 5) & 1) == 0 else -1
+	var sign2 = 1 if ((byte_value >> 6) & 1) == 0 else -1
 	
-	var axis_map = [0, 2, 1]
-
-	rotation.x = Vector3()
-	rotation.x[axis_map[x_axis]] = x_sign
+	var cols = [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+	cols[row0_index].x = sign0
+	cols[row1_index].y = sign1
+	cols[row2_index].z = sign2
 	
-	rotation.y = Vector3()
-	rotation.y[axis_map[z_axis]] = z_sign
+	var col0 = cols[0]
+	var col1 = cols[1]
+	var col2 = cols[2]
 	
-	rotation.z = Vector3()
-	rotation.z[axis_map[y_axis]] = - y_sign
-
-	rot_cache[encoded_rot] = rotation
+	var godot_col0 = Vector3(col0.x, col0.z, -col0.y)
+	var godot_col1 = Vector3(col2.x, col2.z, -col2.y)
+	var godot_col2 = Vector3(-col1.x, -col1.z, col1.y)
+	var rotation := Basis(godot_col0, godot_col1, godot_col2)
+	rot_cache[byte_value] = rotation
 	return rotation

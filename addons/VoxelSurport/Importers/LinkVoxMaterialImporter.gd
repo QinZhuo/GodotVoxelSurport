@@ -33,5 +33,5 @@ func _import(source_file, save_path, options: Dictionary, _platforms, gen_files:
 	if not voxel:
 		return _load_res(save_path, source_file)
 		
-	var material := voxel.get_material(source_file.trim_suffix('.lres') if options["import_textures"] else "", [])
+	var material := voxel.get_material(source_file.trim_suffix('.lres') if options["import_textures"] else "", gen_files)
 	return _save_res(material, save_path, source_file)

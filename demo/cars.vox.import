@@ -13,3 +13,4 @@ dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.res
 [params]
 
 scale=0.1
+material=""
