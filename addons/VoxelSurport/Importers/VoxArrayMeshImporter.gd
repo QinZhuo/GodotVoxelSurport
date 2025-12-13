@@ -6,16 +6,16 @@ func _get_importer_name():
 	return 'voxel_surport.vol.array_mesh'
 
 func _get_visible_name():
-	return 'ArrayMesh'
+	return _get_resource_type()
 
 func _get_recognized_extensions():
 	return ['vox']
 
 func _get_save_extension():
-	return 'mesh'
+	return "res"
 
 func _get_resource_type():
-	return 'Mesh'
+	return 'ArrayMesh'
 
 func _get_preset_count():
 	return 0

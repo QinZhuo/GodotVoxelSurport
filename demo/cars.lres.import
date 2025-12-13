@@ -1,0 +1,16 @@
+[remap]
+
+importer="voxel_surport.link_res.vol.array_mesh"
+type="ArrayMesh"
+uid="uid://jambecw2ng76"
+path="res://.godot/imported/cars.lres-e2a2d2a73eef6f666ee920ef17072f6d.tres"
+
+[deps]
+
+source_file="res://demo/cars.lres"
+dest_files=["res://.godot/imported/cars.lres-e2a2d2a73eef6f666ee920ef17072f6d.tres"]
+
+[params]
+
+link_path="D:/Work/GodotProject/GodotVoxelSurport/demo/cars.vox"
+scale=0.1

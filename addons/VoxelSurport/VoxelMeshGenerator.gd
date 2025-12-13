@@ -47,15 +47,8 @@ func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 	for data in thread_datas:
 		var mesh = data.surface.commit()
 		main_surface.append_from(mesh, 0, Transform3D.IDENTITY)
-
-	var material := StandardMaterial3D.new()
-	main_surface.set_material(material)
-	material.albedo_texture = voxel_data.get_albedo_textrue()
-	material.metallic_texture = voxel_data.get_metal_textrue()
-	material.roughness_texture = voxel_data.get_rough_textrue()
-	material.emission_enabled = true
-	material.emission_energy_multiplier = 16
-	material.emission_texture = voxel_data.get_emission_textrue()
+		
+	main_surface.set_material(voxel_data.get_material())
 	var mesh := main_surface.commit()
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
 	return mesh
