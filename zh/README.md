@@ -10,4 +10,5 @@
 - 自动生成 金属 粗糙 自发光 等贴图
 - 解决导入大于255*255*255的.vox模型过慢导致卡死的问题
 
-![](/images/image.png)
+![](/images/cards.png)
+![](/images/teapot.png)

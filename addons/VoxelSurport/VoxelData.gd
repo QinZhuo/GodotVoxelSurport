@@ -16,7 +16,36 @@ func get_voxels() -> Dictionary[Vector3i, int]:
 func get_albedo_textrue(save_path: String = "") -> ImageTexture:
 	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
 	for x in 256:
-		image.set_pixel(x, 0, colors[x])
+		var color := colors[x]
+		if materials.has(x):
+			color.a = 1 - materials[x].trans
+		image.set_pixel(x, 0, color)
+	if save_path:
+		image.save_png(save_path)
+	return ImageTexture.create_from_image(image)
+
+func get_metal_textrue(save_path: String = "") -> ImageTexture:
+	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
+	for x in 256:
+		image.set_pixel(x, 0, Color.from_hsv(0, 0, materials[x].metal if materials.has(x) else 0))
+	if save_path:
+		image.save_png(save_path)
+	return ImageTexture.create_from_image(image)
+
+func get_rough_textrue(save_path: String = "") -> ImageTexture:
+	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
+	for x in 256:
+		image.set_pixel(x, 0, Color.from_hsv(0, 0, materials[x].roughness if materials.has(x) else 0))
+	if save_path:
+		image.save_png(save_path)
+	return ImageTexture.create_from_image(image)
+
+func get_emission_textrue(save_path: String = "") -> ImageTexture:
+	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
+	for x in 256:
+		var color := colors[x] * materials[x].emission if materials.has(x) else Color.BLACK
+		color.a = 1
+		image.set_pixel(x, 0, color)
 	if save_path:
 		image.save_png(save_path)
 	return ImageTexture.create_from_image(image)
@@ -33,17 +62,17 @@ class VoxelModel:
 class VoxelMaterial:
 	var type: String
 
-	var trans: float
+	var trans: float = 0
 
-	var metal: float
-	var specular: float
+	var metal: float = 0
+	var specular: float = 0.5
 
-	var roughness: float
+	var roughness: float = 1
 
-	var emission: float
-	var flux: float
+	var emission: float = 0
+	var flux: float = 1
 
-	var refraction: float
+	var refraction: float = 0.5
 
 
 class VoxelNode:

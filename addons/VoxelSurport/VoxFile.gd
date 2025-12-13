@@ -87,9 +87,9 @@ func read_chunk():
 			material.metal = float(attributes.get("_metal", 0));
 			material.specular = float(attributes.get("_sp", 1)) / 2;
 
-			material.roughness = float(attributes.get("_rough", 0));
+			material.roughness = float(attributes.get("_rough", 1)) if material.type == "_metal" else 1;
 			
-			material.emission = float(attributes.get("_emit", 0))
+			material.emission = float(attributes.get("_emit", 0)) if material.type == "_emit" else 0;
 			material.flux = float(attributes.get("_flux", 1));
 			
 			material.refraction = float(attributes.get("_ri", 1.5)) / 3;

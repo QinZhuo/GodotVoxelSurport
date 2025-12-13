@@ -12,7 +12,8 @@ dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mes
 
 [params]
 
-Scale=0.1
-albedo textrue=false
-rough textrue=false
-roughs textrue=false
+scale=0.1
+import_albedo_textrue=true
+import_metal_textrue=true
+import_rough_textrue=true
+import_emission_textrue=true

@@ -10,4 +10,5 @@
 - Automatically generate metal, roughness, emissive, and other maps
 - Solves the issue of slow import and crashing when importing .vox models larger than 255*255*255
 
-![](/images/image.png)
+![](/images/cards.png)
+![](/images/teapot.png)
