@@ -29,18 +29,6 @@ func _get_import_options(path, preset):
 			'name': 'Scale',
 			'default_value': 0.1
 		},
-		{
-			'name': 'GreedyMeshGenerator',
-			'default_value': true
-		},
-		{
-			'name': 'SnapToGround',
-			'default_value': false
-		},
-		{
-			'name': 'FirstKeyframeOnly',
-			'default_value': true
-		}
 	]
 
 func _get_option_visibility(path, option, options):
@@ -52,7 +40,7 @@ func _import(source_file, save_path, options, _platforms, _gen_files):
 	if not vox:
 		return FAILED
 	prints("load .vox time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
-	var voxels = vox.voxel_data.get_voxels()
+	var voxels := vox.voxel_data.get_voxels()
 	prints("get voxels time:", (Time.get_ticks_usec() - time) / 1000.0, "ms", voxels.size(), "voxels")
 	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(vox.voxel_data, 0.1)
 	if not mesh:

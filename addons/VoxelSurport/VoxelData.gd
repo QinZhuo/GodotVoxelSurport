@@ -13,7 +13,6 @@ func get_voxels() -> Dictionary[Vector3i, int]:
 			nodes[0].merge_Voxels(voxels, self)
 	return voxels
 
-
 class VoxelModel:
 	var size: Vector3
 	var voxels: Dictionary[Vector3i, int]
@@ -21,7 +20,6 @@ class VoxelModel:
 		var offset: Vector3i = (size / 2).floor()
 		for pos in voxels:
 			target_voxels[pos - offset] = voxels[pos]
-
 
 class VoxelMaterial:
 	var type: String
@@ -58,11 +56,12 @@ class VoxelNode:
 			return voxels
 		if layerId in voxel.layers and not voxel.layers[layerId].isVisible:
 			return voxels
-		var tasks := []
-		for i in child_nodes:
-			tasks.append(WorkerThreadPool.add_task(voxel.nodes[i].get_Voxels.bind(voxel, frame_index)))
-		for task in tasks:
-			WorkerThreadPool.wait_for_task_completion(task)
+		if child_nodes.size() > 1:
+			var tasks := []
+			for i in child_nodes:
+				tasks.append(WorkerThreadPool.add_task(voxel.nodes[i].get_Voxels.bind(voxel, frame_index)))
+			for task in tasks:
+				WorkerThreadPool.wait_for_task_completion(task)
 		for i in child_nodes:
 			voxel.nodes[i].merge_Voxels(voxels, voxel, frame_index)
 		if frames.size() > frame_index:

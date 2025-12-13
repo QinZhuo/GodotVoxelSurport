@@ -36,8 +36,9 @@ func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var data = ThreadData.new(dir, surface)
 		thread_datas.append(data)
-	
-	WorkerThreadPool.wait_for_group_task_completion(WorkerThreadPool.add_group_task(_generate_dir_face, FaceTool.Faces.size()))
+
+	var task_id := WorkerThreadPool.add_group_task(_generate_dir_face, FaceTool.Faces.size())
+	WorkerThreadPool.wait_for_group_task_completion(task_id)
 	
 	var main_surface = SurfaceTool.new()
 	main_surface.begin(Mesh.PRIMITIVE_TRIANGLES)
