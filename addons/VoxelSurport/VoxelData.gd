@@ -8,16 +8,16 @@ var layers: Dictionary[int, VoxelLayer]
 var voxels: Dictionary[Vector3i, int]
 
 func get_voxels() -> Dictionary[Vector3i, int]:
-	if voxels.size()==0:
+	if voxels.size() == 0:
 		if nodes.size() > 0:
-			nodes[0].get_Voxels(voxels, self)
+			nodes[0].merge_Voxels(voxels, self)
 	return voxels
 
 
 class VoxelModel:
 	var size: Vector3
 	var voxels: Dictionary[Vector3i, int]
-	func get_Voxels(target_voxels: Dictionary[Vector3i, int]):
+	func merge_Voxels(target_voxels: Dictionary[Vector3i, int]):
 		var offset: Vector3i = (size / 2).floor()
 		for pos in voxels:
 			target_voxels[pos - offset] = voxels[pos]
@@ -48,16 +48,27 @@ class VoxelNode:
 
 	var voxels: Dictionary[Vector3i, int]
 	
-	func get_Voxels(target_voxels: Dictionary[Vector3i, int], voxel: VoxelData, frame_index: int = 0):
-		voxels.clear()
+	func merge_Voxels(target_voxels: Dictionary[Vector3i, int], voxel: VoxelData, frame_index: int = 0):
+		get_Voxels(voxel, frame_index)
+		for pos in voxels:
+			target_voxels[pos] = voxels[pos]
+
+	func get_Voxels(voxel: VoxelData, frame_index: int = 0) -> Dictionary[Vector3i, int]:
+		if voxels.size() > 0:
+			return voxels
 		if layerId in voxel.layers and not voxel.layers[layerId].isVisible:
-			return
+			return voxels
+		var tasks := []
 		for i in child_nodes:
-			voxel.nodes[i].get_Voxels(voxels, voxel, frame_index)
+			tasks.append(WorkerThreadPool.add_task(voxel.nodes[i].get_Voxels.bind(voxel, frame_index)))
+		for task in tasks:
+			WorkerThreadPool.wait_for_task_completion(task)
+		for i in child_nodes:
+			voxel.nodes[i].merge_Voxels(voxels, voxel, frame_index)
 		if frames.size() > frame_index:
 			var frame := frames[frame_index]
 			if frame.model_id >= 0:
-				voxel.models[frame.model_id].get_Voxels(voxels)
+				voxel.models[frame.model_id].merge_Voxels(voxels)
 			if frame.rotation != Basis.IDENTITY or frame.position != Vector3.ZERO:
 				var new_data: Dictionary[Vector3i, int]
 				for pos in voxels:
@@ -65,10 +76,9 @@ class VoxelNode:
 					var new_pos := ((frame.rotation * Vector3(pos) + half_step - half_step).floor() + frame.position);
 					new_data[Vector3i(new_pos)] = voxels[pos]
 				voxels = new_data
-		for pos in voxels:
-			target_voxels[pos] = voxels[pos]
+		return voxels
 		
-
+		
 class VoxelFrame:
 	var model_id: int = -1
 	var position: Vector3

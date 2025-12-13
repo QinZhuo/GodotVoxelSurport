@@ -4,7 +4,7 @@ var pos_min: Vector3i
 var pos_max: Vector3i
 var slice_voxels: Array[Dictionary]
 var scale: float
-
+var thread_datas: Array[ThreadData] = []
 
 func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 	var voxels := voxel_data.get_voxels()
@@ -30,21 +30,19 @@ func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 				slices[slice_index] = {}
 			slices[slice_index][pos] = voxels[pos]
 	
-	var threads: Array[ThreadData] = []
-	for dir in FaceTool.Faces.size():
-		var tool = SurfaceTool.new()
-		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var data = ThreadData.new(dir, tool )
-		threads.append(data)
-		data.thread.start(_generate_dir_face.bind(data.dir, data.surface))
 	
-	for data in threads:
-		data.thread.wait_to_finish()
+	for dir in FaceTool.Faces.size():
+		var surface = SurfaceTool.new()
+		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var data = ThreadData.new(dir, surface)
+		thread_datas.append(data)
+	
+	WorkerThreadPool.wait_for_group_task_completion(WorkerThreadPool.add_group_task(_generate_dir_face, FaceTool.Faces.size()))
 	
 	var main_surface = SurfaceTool.new()
 	main_surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	for data in threads:
+	for data in thread_datas:
 		var mesh = data.surface.commit()
 		main_surface.append_from(mesh, 0, Transform3D.IDENTITY)
 
@@ -53,10 +51,10 @@ func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 	return main_surface.commit()
 
 
-func _generate_dir_face(dir: int, surface: SurfaceTool) -> void:
+func _generate_dir_face(dir: int) -> void:
 	var axis := FaceTool.SliceAxis[dir]
 	var slices := slice_voxels[axis.x]
-	
+	var surface := thread_datas[dir].surface
 	for slice_index in range(pos_min[axis.x], pos_max[axis.x] + 1):
 		if slices.has(slice_index):
 			var slice_voxels_visible = _get_dir_visible_slice_voxels(slices, axis, dir, slice_index)

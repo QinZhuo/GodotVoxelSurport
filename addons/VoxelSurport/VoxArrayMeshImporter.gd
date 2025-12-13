@@ -55,5 +55,7 @@ func _import(source_file, save_path, options, _platforms, _gen_files):
 	var voxels = vox.voxel_data.get_voxels()
 	prints("get voxels time:", (Time.get_ticks_usec() - time) / 1000.0, "ms", voxels.size(), "voxels")
 	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(vox.voxel_data, 0.1)
+	if not mesh:
+		return FAILED
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
 	return ResourceSaver.save(mesh, "%s.%s" % [save_path, _get_save_extension()])
