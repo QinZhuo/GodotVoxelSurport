@@ -127,6 +127,7 @@ func _get_z_size(voxels: Dictionary, pos: Vector3i, axis: Vector3i, y_size: int)
 		size += 1
 	return size
 
+
 class ThreadData:
 	var dir: int
 	var surface: SurfaceTool

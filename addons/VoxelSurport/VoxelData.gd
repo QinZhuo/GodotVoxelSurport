@@ -13,6 +13,7 @@ func get_voxels() -> Dictionary[Vector3i, int]:
 			nodes[0].merge_Voxels(voxels, self)
 	return voxels
 
+
 class VoxelModel:
 	var size: Vector3
 	var voxels: Dictionary[Vector3i, int]
@@ -20,6 +21,7 @@ class VoxelModel:
 		var offset: Vector3i = (size / 2).floor()
 		for pos in voxels:
 			target_voxels[pos - offset] = voxels[pos]
+
 
 class VoxelMaterial:
 	var type: String

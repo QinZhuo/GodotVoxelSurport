@@ -13,6 +13,3 @@ dest_files=["res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.
 [params]
 
 Scale=0.1
-GreedyMeshGenerator=true
-SnapToGround=false
-FirstKeyframeOnly=true

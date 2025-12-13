@@ -13,6 +13,3 @@ dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mes
 [params]
 
 Scale=0.1
-GreedyMeshGenerator=true
-SnapToGround=false
-FirstKeyframeOnly=true
