@@ -3,14 +3,17 @@ class_name VoxelMeshGenerator
 var pos_min: Vector3i
 var pos_max: Vector3i
 var slice_voxels: Array[Dictionary]
-var options: Dictionary
-var scale: float:
-	get():
-		return options["scale"]
-var thread_datas: Array[ThreadData] = []
+var scale: float
+var import_materials_textures: bool
+var unwrap_lightmap_uv2: bool
+var materials: Array
+var tasks: Array[ThreadTask] = []
 
-func generate(voxel_data: VoxelData, options: Dictionary) -> Mesh:
-	self.options = options
+func generate(voxel_data: VoxelData, options: Dictionary, path: String = "") -> Mesh:
+	scale = options[VoxelMeshImporter.scale]
+	import_materials_textures = options[VoxelMeshImporter.import_materials_textures]
+	unwrap_lightmap_uv2 = options[VoxelMeshImporter.unwrap_lightmap_uv2]
+	materials = options[VoxelMeshImporter.materials]
 	var time = Time.get_ticks_usec()
 	var voxels := voxel_data.get_voxels()
 	pos_min = Vector3i.MAX
@@ -36,33 +39,41 @@ func generate(voxel_data: VoxelData, options: Dictionary) -> Mesh:
 	
 	
 	for dir in FaceTool.Faces.size():
-		var surface = SurfaceTool.new()
-		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var data = ThreadData.new(dir, surface)
-		thread_datas.append(data)
+		var task = ThreadTask.new()
+		task.dir = dir
+		task.surface = SurfaceTool.new()
+		task.surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		tasks.append(task)
 
 	var task_id := WorkerThreadPool.add_group_task(_generate_dir_face, FaceTool.Faces.size())
 	WorkerThreadPool.wait_for_group_task_completion(task_id)
 	
-	var main_surface = SurfaceTool.new()
-	main_surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var surface = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	for data in thread_datas:
-		var mesh = data.surface.commit()
-		main_surface.append_from(mesh, 0, Transform3D.IDENTITY)
-		
-	main_surface.set_material(voxel_data.get_material())
-	main_surface
-	var mesh := main_surface.commit()
-	mesh.lightmap_unwrap(Transform3D.IDENTITY, scale)
+	for task in tasks:
+		var mesh = task.surface.commit()
+		surface.append_from(mesh, 0, Transform3D.IDENTITY)
+	
+	var mesh := surface.commit()
+	
+	if unwrap_lightmap_uv2:
+		mesh.lightmap_unwrap(Transform3D.IDENTITY, scale)
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
+	
+	if import_materials_textures:
+		var mat := voxel_data.get_material(path if import_materials_textures else "")
+		mesh.surface_set_material(0, mat)
+	else:
+		for i in materials.size():
+			mesh.surface_set_material(i, materials[i])
 	return mesh
 
 
 func _generate_dir_face(dir: int) -> void:
 	var axis := FaceTool.SliceAxis[dir]
 	var slices := slice_voxels[axis.x]
-	var surface := thread_datas[dir].surface
+	var surface := tasks[dir].surface
 	for slice_index in range(pos_min[axis.x], pos_max[axis.x] + 1):
 		if slices.has(slice_index):
 			var slice_voxels_visible = _get_dir_visible_slice_voxels(slices, axis, dir, slice_index)
@@ -135,10 +146,6 @@ func _get_z_size(voxels: Dictionary, pos: Vector3i, axis: Vector3i, y_size: int)
 	return size
 
 
-class ThreadData:
+class ThreadTask:
 	var dir: int
 	var surface: SurfaceTool
-	
-	func _init(p_dir: int, p_tool: SurfaceTool):
-		dir = p_dir
-		surface = p_tool

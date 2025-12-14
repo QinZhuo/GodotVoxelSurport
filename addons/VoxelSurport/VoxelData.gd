@@ -2,9 +2,7 @@ class_name VoxelData
 
 var models: Array[VoxelModel]
 
-var colors: Array[Color]
-
-var materials: Dictionary[int, VoxelMaterial]
+var materials: Array[VoxelMaterial]
 
 var nodes: Dictionary[int, VoxelNode]
 
@@ -22,58 +20,44 @@ func get_voxels() -> Dictionary[Vector3i, int]:
 
 func get_material(save_path: String = "") -> StandardMaterial3D:
 	var time = Time.get_ticks_usec()
-	var material := StandardMaterial3D.new()
-	material.emission_enabled = true
-	material.emission_energy_multiplier = 16
+	var path := save_path.get_basename() + '.tres'
+	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
+	if material is StandardMaterial3D:
+		material.emission_enabled = true
+		material.emission_energy_multiplier = 16
+		material.albedo_texture = get_albedo_textrue(save_path)
+		material.metallic_texture = get_metal_textrue(save_path)
+		material.roughness_texture = get_rough_textrue(save_path)
+		material.emission_texture = get_emission_textrue(save_path)
 	if save_path:
-		material.albedo_texture = get_albedo_textrue(save_path + "_albedo.png")
-		material.metallic_texture = get_metal_textrue(save_path + "_metal.png")
-		material.roughness_texture = get_rough_textrue(save_path + "_rough.png")
-		material.emission_texture = get_emission_textrue(save_path + "_emission.png")
-	else:
-		material.albedo_texture = get_albedo_textrue()
-		material.metallic_texture = get_metal_textrue()
-		material.roughness_texture = get_rough_textrue()
-		material.emission_texture = get_emission_textrue()
-	prints("create material time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
+		material.resource_path = path
+		ResourceSaver.save(material)
 	return material
 
-func get_albedo_textrue(save_path: String = "") -> ImageTexture:
+func _get_texture(get_pixel: Callable, save_path: String = , type: String) -> ImageTexture:
 	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
 	for x in 256:
-		var color := colors[x]
-		if materials.has(x):
-			color.a = 1 - materials[x].trans
+		var color := get_pixel.call(materials[x])
 		image.set_pixel(x, 0, color)
+	var path := save_path.get_basename() + '_' + type + '.tres'
+	var texture: ImageTexture = ResourceLoader.load(path) if FileAccess.file_exists(path) else ImageTexture.create_from_image(image)
+	texture.set_image(image)
 	if save_path:
-		image.save_png(save_path)
-	return ImageTexture.create_from_image(image)
+		texture.resource_path = path
+		ResourceSaver.save(texture)
+	return texture
+
+func get_albedo_textrue(save_path: String = "") -> ImageTexture:
+	return _get_texture(func(m): return m.color, save_path, "albedo")
 
 func get_metal_textrue(save_path: String = "") -> ImageTexture:
-	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
-	for x in 256:
-		image.set_pixel(x, 0, Color.from_hsv(0, 0, materials[x].metal if materials.has(x) else 0))
-	if save_path:
-		image.save_png(save_path)
-	return ImageTexture.create_from_image(image)
+	return _get_texture(func(m): return Color.from_hsv(0, 0, m.metal), save_path, "metal")
 
 func get_rough_textrue(save_path: String = "") -> ImageTexture:
-	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
-	for x in 256:
-		image.set_pixel(x, 0, Color.from_hsv(0, 0, materials[x].roughness if materials.has(x) else 0))
-	if save_path:
-		image.save_png(save_path)
-	return ImageTexture.create_from_image(image)
+	return _get_texture(func(m): return Color.from_hsv(0, 0, m.roughness), save_path, "rough")
 
 func get_emission_textrue(save_path: String = "") -> ImageTexture:
-	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
-	for x in 256:
-		var color := colors[x] * materials[x].emission if materials.has(x) else Color.BLACK
-		color.a = 1
-		image.set_pixel(x, 0, color)
-	if save_path:
-		image.save_png(save_path)
-	return ImageTexture.create_from_image(image)
+	return _get_texture(func(m): return m.color * m.emission, save_path, "emission")
 
 
 class VoxelModel:
@@ -88,6 +72,8 @@ class VoxelModel:
 
 
 class VoxelMaterial:
+	var color: Color
+
 	var type: String
 
 	var trans: float = 0

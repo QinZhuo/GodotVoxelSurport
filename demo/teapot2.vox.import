@@ -1,19 +1,18 @@
 [remap]
 
-importer="voxel_surport.vol.array_mesh"
-type="ArrayMesh"
-uid="uid://b7u6ho2idipyt"
-path="res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.res"
+importer="voxel_surport.voxel.mesh"
+type="Mesh"
+uid="uid://cgwj1wb77lnd5"
+path="res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.mesh"
 
 [deps]
 
 source_file="res://demo/teapot2.vox"
-dest_files=["res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.res"]
+dest_files=["res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.mesh"]
 
 [params]
 
-scale=0.1
-add_uv2=true
-material=""
-import_material=false
-import_textures=false
+mesh/scale=0.1
+mesh/unwrap_lightmap_uv2=false
+material/import_materials_textures=false
+material/materials=[Resource("uid://jyerpx247ufg", "res://demo/cars.tres")]

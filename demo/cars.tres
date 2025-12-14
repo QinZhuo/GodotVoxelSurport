@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" load_steps=5 format=3 uid="uid://jyerpx247ufg"]
+
+[ext_resource type="Texture2D" uid="uid://l50i0p5fdf8y" path="res://demo/cars_albedo.tres" id="1_wbjs1"]
+[ext_resource type="Texture2D" uid="uid://b1cymnomxnpfy" path="res://demo/cars_emission.tres" id="2_mfcev"]
+[ext_resource type="Texture2D" uid="uid://ct12sasrwfus7" path="res://demo/cars_metal.tres" id="3_5vwwd"]
+[ext_resource type="Texture2D" uid="uid://dxjn20lskdswc" path="res://demo/cars_rough.tres" id="4_6iab1"]
+
+[resource]
+albedo_texture = ExtResource("1_wbjs1")
+metallic_texture = ExtResource("3_5vwwd")
+roughness_texture = ExtResource("4_6iab1")
+emission_enabled = true
+emission_energy_multiplier = 16.0
+emission_texture = ExtResource("2_mfcev")

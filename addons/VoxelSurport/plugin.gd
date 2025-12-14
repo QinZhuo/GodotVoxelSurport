@@ -4,10 +4,7 @@ extends EditorPlugin
 var importers: Array[EditorImportPlugin]
 
 func _enter_tree():
-	importers.append(VoxArrayMeshImporter.new())
-	importers.append(LinkVoxImporter.new())
-	importers.append(LinkVoxMaterialImporter.new())
-	importers.append(LinkVoxArrayMeshImporter.new())
+	importers.append(VoxelMeshImporter.new())
 	for importer in importers:
 		add_import_plugin(importer)
 

@@ -21,6 +21,9 @@ static func Open(path: String) -> VoxAccess:
 func _init(file: FileAccess):
 	_file = file
 	voxel_data = VoxelData.new()
+	voxel_data.materials.resize(256)
+	for i in voxel_data.materials.size():
+		voxel_data.materials[i] = VoxelData.VoxelMaterial.new()
 	while file.get_position() < file.get_length():
 		read_chunk()
 
@@ -45,9 +48,8 @@ func read_chunk():
 				model.voxels[pos] = _get_byte()
 		"RGBA":
 			var model := voxel_data.models.back()
-			voxel_data.colors.resize(256)
 			for i in 255:
-				voxel_data.colors[i + 1] = _get_color()
+				voxel_data.materials[i + 1].color = _get_color()
 		"nTRN":
 			var node := _get_node()
 			node.child_nodes.append(_get_int())
@@ -75,12 +77,11 @@ func read_chunk():
 				node.get_frame(frame_index).model_id = model_id
 		"MATL":
 			var material_id := _get_int()
-			var material := VoxelData.VoxelMaterial.new();
-			voxel_data.materials[material_id] = material
+			var material := voxel_data.materials[material_id] if material_id < 256 else VoxelData.VoxelMaterial.new()
 			var attributes := _get_dictionary()
 			material.type = attributes.get("_type", "diffuse");
 
-			material.trans = float(attributes.get("_trans", 0));
+			material.color.a = 1 - float(attributes.get("_trans", 0));
 
 			material.metal = float(attributes.get("_metal", 0));
 			material.specular = float(attributes.get("_sp", 1)) / 2;
