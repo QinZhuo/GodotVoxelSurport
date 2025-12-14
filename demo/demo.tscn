@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://dl2c605m5it3r"]
+[gd_scene load_steps=6 format=3 uid="uid://dl2c605m5it3r"]
 
-[ext_resource type="ArrayMesh" uid="uid://38uejo5uda4g" path="res://demo/teapot1.vox" id="1_d6po2"]
-[ext_resource type="ArrayMesh" uid="uid://cgwj1wb77lnd5" path="res://demo/teapot2.vox" id="2_ytiva"]
-[ext_resource type="ArrayMesh" uid="uid://dakwigc2361vv" path="res://demo/cars.vox" id="3_dar0o"]
+[ext_resource type="ArrayMesh" uid="uid://ld5hc20hopqh" path="res://demo/teapot1.vox" id="1_d6po2"]
+[ext_resource type="ArrayMesh" uid="uid://b7u6ho2idipyt" path="res://demo/teapot2.vox" id="2_ytiva"]
+[ext_resource type="ArrayMesh" uid="uid://btugifwnxf3jv" path="res://demo/cars.vox" id="3_dar0o"]
+[ext_resource type="LightmapGIData" uid="uid://blw07ggnbmoku" path="res://demo/demo.lmbake" id="4_j5lb4"]
 
 [sub_resource type="Environment" id="Environment_dar0o"]
 tonemap_mode = 3
@@ -14,6 +15,9 @@ glow_enabled = true
 
 [node name="Node3D" type="Node3D"]
 
+[node name="Cars" type="MeshInstance3D" parent="."]
+mesh = ExtResource("3_dar0o")
+
 [node name="Teapot1" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -19.757208)
 mesh = ExtResource("1_d6po2")
@@ -22,8 +26,8 @@ mesh = ExtResource("1_d6po2")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -42.783142)
 mesh = ExtResource("2_ytiva")
 
-[node name="Cars" type="MeshInstance3D" parent="."]
-mesh = ExtResource("3_dar0o")
-
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_dar0o")
+
+[node name="LightmapGI" type="LightmapGI" parent="."]
+light_data = ExtResource("4_j5lb4")

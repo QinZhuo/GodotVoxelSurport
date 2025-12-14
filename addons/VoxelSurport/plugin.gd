@@ -5,7 +5,7 @@ var importers: Array[EditorImportPlugin]
 
 func _enter_tree():
 	importers.append(VoxArrayMeshImporter.new())
-	importers.append(LinkResImporter.new())
+	importers.append(LinkVoxImporter.new())
 	importers.append(LinkVoxMaterialImporter.new())
 	importers.append(LinkVoxArrayMeshImporter.new())
 	for importer in importers:

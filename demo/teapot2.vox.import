@@ -2,7 +2,7 @@
 
 importer="voxel_surport.vol.array_mesh"
 type="ArrayMesh"
-uid="uid://cgwj1wb77lnd5"
+uid="uid://b7u6ho2idipyt"
 path="res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.res"
 
 [deps]
@@ -13,4 +13,7 @@ dest_files=["res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.
 [params]
 
 scale=0.1
+add_uv2=true
 material=""
+import_material=false
+import_textures=false

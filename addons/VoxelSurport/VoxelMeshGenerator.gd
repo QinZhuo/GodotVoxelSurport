@@ -3,13 +3,16 @@ class_name VoxelMeshGenerator
 var pos_min: Vector3i
 var pos_max: Vector3i
 var slice_voxels: Array[Dictionary]
-var scale: float
+var options: Dictionary
+var scale: float:
+	get():
+		return options["scale"]
 var thread_datas: Array[ThreadData] = []
 
-func generate(voxel_data: VoxelData, scale: float) -> Mesh:
+func generate(voxel_data: VoxelData, options: Dictionary) -> Mesh:
+	self.options = options
 	var time = Time.get_ticks_usec()
 	var voxels := voxel_data.get_voxels()
-	self.scale = scale
 	pos_min = Vector3i.MAX
 	pos_max = Vector3i.MIN
 	
@@ -49,7 +52,9 @@ func generate(voxel_data: VoxelData, scale: float) -> Mesh:
 		main_surface.append_from(mesh, 0, Transform3D.IDENTITY)
 		
 	main_surface.set_material(voxel_data.get_material())
+	main_surface
 	var mesh := main_surface.commit()
+	mesh.lightmap_unwrap(Transform3D.IDENTITY, scale)
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
 	return mesh
 

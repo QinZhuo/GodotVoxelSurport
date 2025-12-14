@@ -6,7 +6,7 @@ func _get_importer_name():
 	return 'voxel_surport.vol.array_mesh'
 
 func _get_visible_name():
-	return _get_resource_type()
+	return "Vox " + _get_resource_type()
 
 func _get_recognized_extensions():
 	return ['vox']
@@ -17,23 +17,33 @@ func _get_save_extension():
 func _get_resource_type():
 	return 'ArrayMesh'
 
-func _get_preset_count():
-	return 0
-
-func _get_preset_name(_preset):
-	return 'Default'
-
 func _get_import_options(path, preset):
-	return [
+	return MeshOptions + MaterialOptions
+
+const MeshOptions := [
 		{
 			name = 'scale',
 			default_value = 0.1
+		},
+		{
+			name = 'add_uv2',
+			default_value = false
 		},
 		{
 			name = 'material',
             default_value = "",
             property_hint = PROPERTY_HINT_FILE,
             hint_string = "*.lres,*.res,*.tres"
+		},
+		{
+			name = 'import_material',
+			default_value = false,
+		},
+	]
+const MaterialOptions := [
+		{
+			name = 'import_textures',
+			default_value = false,
 		}
 	]
 
@@ -41,7 +51,7 @@ func _get_option_visibility(path, option, options):
 	return true
 
 func _import(source_file, save_path, options, _platforms, gen_files):
-	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel_data, options['scale'])
+	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel_data, options)
 	if not mesh:
 		return FAILED
 	if options["material"]:

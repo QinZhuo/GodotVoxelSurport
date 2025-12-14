@@ -28,3 +28,12 @@ MagicaVoxel.With.Extensions.To.Mesh={
 "Scale": 0.1,
 "SnapToGround": false
 }
+voxel_surport.link_res.vol.array_mesh={
+&"add_uv2": true
+}
+voxel_surport.link_vox.vol.array_mesh={
+&"add_uv2": true
+}
+voxel_surport.vol.array_mesh={
+&"add_uv2": true
+}
