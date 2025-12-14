@@ -13,6 +13,6 @@ dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mes
 [params]
 
 mesh/scale=0.1
-mesh/unwrap_lightmap_uv2=false
+mesh/unwrap_lightmap_uv2=true
 material/import_materials_textures=true
 material/materials=[]

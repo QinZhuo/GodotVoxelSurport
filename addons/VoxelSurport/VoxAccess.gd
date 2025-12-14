@@ -79,19 +79,20 @@ func read_chunk():
 			var material_id := _get_int()
 			var material := voxel_data.materials[material_id] if material_id < 256 else VoxelData.VoxelMaterial.new()
 			var attributes := _get_dictionary()
-			material.type = attributes.get("_type", "diffuse");
+			material.type = attributes.get("_type", "diffuse")
 
-			material.color.a = 1 - float(attributes.get("_trans", 0));
+			material.color.a = 1 - float(attributes.get("_trans", 0))
 
-			material.metal = float(attributes.get("_metal", 0));
-			material.specular = float(attributes.get("_sp", 1)) / 2;
+			material.metal = float(attributes.get("_metal", 0)) if material.type == "_metal" else 0
+			material.specular = float(attributes.get("_sp", 1)) / 2
 
-			material.roughness = float(attributes.get("_rough", 1)) if material.type == "_metal" else 1;
+			material.rough = float(attributes.get("_rough", 0)) if material.type == "_metal" else 1
 			
-			material.emission = float(attributes.get("_emit", 0)) if material.type == "_emit" else 0;
-			material.flux = float(attributes.get("_flux", 1));
+			material.emission = float(attributes.get("_emit", 0)) if material.type == "_emit" else 0
+			material.flux = float(attributes.get("_flux", 1))
 			
-			material.refraction = float(attributes.get("_ri", 1.5)) / 3;
+			material.refraction = float(attributes.get("_ri", 1.5)) / 3
+			printerr(material.type)
 
 		"LAYR":
 			var layer := VoxelData.VoxelLayer.new()
@@ -139,9 +140,9 @@ func _get_color() -> Color:
 func _get_dictionary() -> Dictionary[String, String]:
 	var dictionary: Dictionary[String, String]
 	for _p in range(_get_int()):
-		var key = _get_string(_get_int());
-		dictionary[key] = _get_string(_get_int());
-	return dictionary;
+		var key = _get_string(_get_int())
+		dictionary[key] = _get_string(_get_int())
+	return dictionary
 
 func _get_node() -> VoxelData.VoxelNode:
 	var node := VoxelData.VoxelNode.new()

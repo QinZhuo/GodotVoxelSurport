@@ -25,6 +25,7 @@ func get_material(save_path: String = "") -> StandardMaterial3D:
 	if material is StandardMaterial3D:
 		material.emission_enabled = true
 		material.emission_energy_multiplier = 16
+		material.metallic = 1
 		material.albedo_texture = get_albedo_textrue(save_path)
 		material.metallic_texture = get_metal_textrue(save_path)
 		material.roughness_texture = get_rough_textrue(save_path)
@@ -54,7 +55,7 @@ func get_metal_textrue(save_path: String = "") -> ImageTexture:
 	return _get_texture(func(m): return Color.from_hsv(0, 0, m.metal), save_path, "metal")
 
 func get_rough_textrue(save_path: String = "") -> ImageTexture:
-	return _get_texture(func(m): return Color.from_hsv(0, 0, m.roughness), save_path, "rough")
+	return _get_texture(func(m): return Color.from_hsv(0, 0, m.rough), save_path, "rough")
 
 func get_emission_textrue(save_path: String = "") -> ImageTexture:
 	return _get_texture(func(m): return m.color * m.emission, save_path, "emission")
@@ -82,7 +83,7 @@ class VoxelMaterial:
 
 	var specular: float = 0.5
 
-	var roughness: float = 1
+	var rough: float = 1
 
 	var emission: float = 0
 
