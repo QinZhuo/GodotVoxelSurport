@@ -92,7 +92,6 @@ func read_chunk():
 			material.flux = float(attributes.get("_flux", 1))
 			
 			material.refraction = float(attributes.get("_ri", 1.5)) / 3
-			printerr(material.type)
 
 		"LAYR":
 			var layer := VoxelData.VoxelLayer.new()
