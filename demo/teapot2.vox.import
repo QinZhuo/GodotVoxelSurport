@@ -12,6 +12,7 @@ dest_files=["res://.godot/imported/teapot2.vox-4ae77a1c43e37fabd92c1ecb59115943.
 
 [params]
 
+mesh/mode=1
 mesh/scale=0.1
 mesh/unwrap_lightmap_uv2=false
 material/import_materials_textures=false

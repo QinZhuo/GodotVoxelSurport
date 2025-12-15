@@ -1,6 +1,7 @@
 @tool
 class_name VoxelMeshImporter
 extends EditorImportPlugin
+
 func _get_importer_name():
 	return 'voxel_surport.voxel.mesh'
 
@@ -19,6 +20,12 @@ func _get_resource_type():
 func _get_import_options(path, preset):
 	return [
 		{
+			name = mesh_mode,
+			default_value = MeshMode.Default,
+			property_hint = PropertyHint.PROPERTY_HINT_ENUM,
+			hint_string = "Default,SideMerge,Merge"
+		},
+		{
 			name = scale,
 			default_value = 0.1,
 		},
@@ -33,18 +40,26 @@ func _get_import_options(path, preset):
 		{
 			name = materials,
 			default_value = [],
-			property_hint = PROPERTY_HINT_FILE,
+			property_hint = PropertyHint.PROPERTY_HINT_FILE,
 			hint_string = "Material"
 		},
 	]
 	
+const mesh_mode := "mesh/mode"
 const scale := "mesh/scale"
 const unwrap_lightmap_uv2 := "mesh/unwrap_lightmap_uv2"
 const materials := "material/materials"
 const import_materials_textures := "material/import_materials_textures"
 
+enum MeshMode {
+	Default,
+	MergeSide,
+	Merge,
+}
+
 func _import(source_file, save_path, options, _platforms, gen_files):
-	var mesh: ArrayMesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel_data, options, source_file)
+	var mesh: ArrayMesh
+	mesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel_data, options, source_file)
 	if not mesh:
 		return FAILED
 	return ResourceSaver.save(mesh, "%s.%s" % [save_path, _get_save_extension()])
