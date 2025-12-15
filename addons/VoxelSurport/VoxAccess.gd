@@ -116,22 +116,23 @@ func read_chunk():
 				node.get_frame(frame_index).model_id = model_id
 		"MATL":
 			var material_id := _get_32()
-			var material := voxel.materials[material_id] if material_id < 256 else VoxelData.VoxelMaterial.new()
-			var attributes := _get_dictionary()
-			material.type = attributes.get("_type", "diffuse")
-
-			material.color.a = 1 - float(attributes.get("_trans", 0))
-
-			material.metal = float(attributes.get("_metal", 0)) if material.type == "_metal" else 0
-			material.specular = float(attributes.get("_sp", 1)) / 2
-
-			material.rough = float(attributes.get("_rough", 0)) if material.type == "_metal" else 1
-			
-			material.emission = float(attributes.get("_emit", 0)) if material.type == "_emit" else 0
-			material.flux = float(attributes.get("_flux", 1))
-			
-			material.refraction = float(attributes.get("_ri", 1.5)) / 3
-
+			if material_id < 256:
+				var material := voxel.materials[material_id]
+				var attributes := _get_dictionary()
+				var type = attributes.get("_type", "diffuse")
+				match type:
+					"_glass", "_blend":
+						material.is_transparent = true
+						material.alpha = 1 - float(attributes.get("_trans", 0))
+					"_metal", "_blend":
+						material.metal = float(attributes.get("_metal", 0))
+					"_metal", "_glass", "_blend":
+						material.rough = float(attributes.get("_rough", 0))
+					"_emit", "_blend":
+						material.emission = float(attributes.get("_emit", 0))
+					"_glass", "_blend":
+						material.is_transparent = true
+						material.alpha = 1 - float(attributes.get("_trans", 0))
 		"LAYR":
 			var layer := VoxelData.VoxelLayer.new()
 			layer.id = _get_32()

@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://dl2c605m5it3r"]
 
-[ext_resource type="ArrayMesh" uid="uid://ld5hc20hopqh" path="res://demo/teapot1.vox" id="1_d6po2"]
+[ext_resource type="ArrayMesh" uid="uid://bl1o815ee3aqo" path="res://demo/teapot1.vox" id="1_d6po2"]
 [ext_resource type="ArrayMesh" uid="uid://cgwj1wb77lnd5" path="res://demo/teapot2.vox" id="2_ytiva"]
 [ext_resource type="ArrayMesh" uid="uid://btugifwnxf3jv" path="res://demo/cars.vox" id="3_dar0o"]
 [ext_resource type="LightmapGIData" uid="uid://blw07ggnbmoku" path="res://demo/demo.lmbake" id="4_j5lb4"]
@@ -30,6 +30,7 @@ mesh = ExtResource("2_ytiva")
 environment = SubResource("Environment_dar0o")
 
 [node name="LightmapGI" type="LightmapGI" parent="."]
+visible = false
 light_data = ExtResource("4_j5lb4")
 
 [node name="ReflectionProbe" type="ReflectionProbe" parent="."]

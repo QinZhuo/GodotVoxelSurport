@@ -18,47 +18,18 @@ func get_mesh() -> ArrayMesh:
 		return nodes[0].get_mesh(self)
 	return null
 
-func get_material(save_path: String = "") -> StandardMaterial3D:
-	var time = Time.get_ticks_usec()
-	var path := save_path.get_basename() + '.tres'
-	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
-	if material is StandardMaterial3D:
-		material.emission_enabled = true
-		material.emission_energy_multiplier = 16
-		material.metallic = 1
-		material.albedo_texture = get_albedo_textrue(save_path)
-		material.metallic_texture = get_metal_textrue(save_path)
-		material.roughness_texture = get_rough_textrue(save_path)
-		material.emission_texture = get_emission_textrue(save_path)
-	if save_path:
-		material.resource_path = path
-		ResourceSaver.save(material)
-	return material
+func generate_models_mesh():
+	for model in models:
+		model.start_generate_mesh(self)
+	for model in models:
+		model.wait_finished()
 
-func _get_texture(get_pixel: Callable, save_path: String = , type: String) -> ImageTexture:
-	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
-	for x in 256:
-		var color := get_pixel.call(materials[x])
-		image.set_pixel(x, 0, color)
-	var path := save_path.get_basename() + '_' + type + '.tres'
-	var texture: ImageTexture = ResourceLoader.load(path) if FileAccess.file_exists(path) else ImageTexture.create_from_image(image)
-	texture.set_image(image)
-	if save_path:
-		texture.resource_path = path
-		ResourceSaver.save(texture)
-	return texture
-
-func get_albedo_textrue(save_path: String = "") -> ImageTexture:
-	return _get_texture(func(m): return m.color, save_path, "albedo")
-
-func get_metal_textrue(save_path: String = "") -> ImageTexture:
-	return _get_texture(func(m): return Color.from_hsv(0, 0, m.metal), save_path, "metal")
-
-func get_rough_textrue(save_path: String = "") -> ImageTexture:
-	return _get_texture(func(m): return Color.from_hsv(0, 0, m.rough), save_path, "rough")
-
-func get_emission_textrue(save_path: String = "") -> ImageTexture:
-	return _get_texture(func(m): return m.color * m.emission, save_path, "emission")
+func generate_models_voxels_array():
+	var tasks = []
+	for model in models:
+		tasks.append(WorkerThreadPool.add_task(model.generate_voxels_array.bind(self)))
+	for task in tasks:
+		WorkerThreadPool.wait_for_task_completion(task)
 
 
 class VoxelModel:
@@ -71,15 +42,29 @@ class VoxelModel:
 
 	var voxels: Dictionary[Vector3i, int]
 
+	var voxels_array: Array[Dictionary]
+
 	var mesh: ArrayMesh
 
 	var _generator: VoxelMeshGenerator
 
-	func start_generate_mesh():
+	func generate_voxels_array(voxel: VoxelData):
+		voxels_array.resize(2)
+		var base_voxels := voxels_array[0]
+		var trans_voxels := voxels_array[1]
+		for pos in voxels:
+			var id := voxels[pos]
+			if voxel.materials[id].is_transparent:
+				trans_voxels[pos] = id
+			else:
+				base_voxels[pos] = id
+
+
+	func start_generate_mesh(voxel: VoxelData):
 		if mesh:
 			return
 		_generator = VoxelMeshGenerator.new()
-		_generator.start_generate_mesh(voxels)
+		_generator.start_generate_mesh(voxels, voxel)
 
 	func wait_finished() -> ArrayMesh:
 		if not mesh and _generator:
@@ -93,24 +78,19 @@ class VoxelMaterial:
 
 	var color: Color
 
-	var type: String
+	var is_transparent: bool = false
 
-	var trans: float = 0
+	var alpha: float = 1:
+		set(value):
+			if is_transparent:
+				color.a = value
 
 	var metal: float = 0
-
-	var specular: float = 0.5
 
 	var rough: float = 1
 
 	var emission: float = 0
 
-	var flux: float = 1
-
-	var refraction: float = 0.5
-
-	func _to_string():
-		return str(id, ":", color)
 
 class VoxelNode:
 	var id: int
@@ -146,16 +126,23 @@ class VoxelNode:
 			frames[frame_index].merge_models(voxel, models)
 		return models
 
+	const MaxSurface = 2
 	func get_mesh(voxel: VoxelData, frame_index: int = 0) -> ArrayMesh:
+		var result_mesh = ArrayMesh.new()
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var models := get_models(voxel, frame_index)
-		for i in models.size():
-			var transform: Transform3D = models[i][1]
-			var offset := transform * (Vector3.ONE * 1000) - (Vector3.ONE * 1000)
-
-			surface.append_from(models[i][0].mesh, 0, transform)
-		return surface.commit()
+		for face in MaxSurface:
+			for i in models.size():
+				var mesh: ArrayMesh = models[i][0].mesh
+				if mesh.get_surface_count() <= face:
+					break
+				var transform: Transform3D = models[i][1]
+				var offset := transform * (Vector3.ONE * 1000) - (Vector3.ONE * 1000)
+				surface.append_from(mesh, face, transform)
+			surface.commit(result_mesh)
+			surface.clear()
+		return result_mesh
 
 	func get_voxels(voxel: VoxelData, frame_index: int = 0) -> Dictionary[Vector3i, int]:
 		var voxels: Dictionary[Vector3i, int]
@@ -168,7 +155,8 @@ class VoxelNode:
 				var new_pos := transform * Vector3(pos)
 				voxels[Vector3i(new_pos)] = model.voxels[pos]
 		return voxels
-		
+
+
 class VoxelFrame:
 	var model_id: int = -1
 	
@@ -187,6 +175,7 @@ class VoxelFrame:
 			for i in models.size():
 				var model_transform: Transform3D = models[i][1]
 				models[i][1] = transform * model_transform
+
 
 class VoxelLayer:
 	var id: int;

@@ -2,7 +2,7 @@
 
 importer="voxel_surport.voxel.mesh"
 type="Mesh"
-uid="uid://ld5hc20hopqh"
+uid="uid://bl1o815ee3aqo"
 path="res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.mesh"
 
 [deps]
@@ -16,4 +16,4 @@ mesh/mode=0
 mesh/scale=0.1
 mesh/unwrap_lightmap_uv2=false
 material/import_materials_textures=false
-material/materials=[Resource("uid://jyerpx247ufg", "res://demo/cars.tres")]
+material/materials=[Resource("uid://l4wr43f2a4rn", "res://demo/cars_mat.tres")]

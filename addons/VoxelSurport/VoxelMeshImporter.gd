@@ -40,7 +40,6 @@ func _get_import_options(path, preset):
 		{
 			name = materials,
 			default_value = [],
-			property_hint = PropertyHint.PROPERTY_HINT_FILE,
 			hint_string = "Material"
 		},
 	]
