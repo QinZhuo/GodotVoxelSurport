@@ -1,4 +1,6 @@
 class_name VoxelMeshGenerator
+## 体素网格生成器
+## 会将数据分为6个方向 并多线程计算网格
 
 var pos_min: Vector3i
 var pos_max: Vector3i
@@ -12,11 +14,12 @@ var mesh: Mesh
 
 func generate(voxel_data: VoxelData, options: Dictionary, path: String = "") -> ArrayMesh:
 	scale = options[VoxelMeshImporter.scale]
+	if scale <= 0:
+		scale = 0.01
 	import_materials_textures = options[VoxelMeshImporter.import_materials_textures]
 	unwrap_lightmap_uv2 = options[VoxelMeshImporter.unwrap_lightmap_uv2]
 	materials = options[VoxelMeshImporter.materials]
 	var time = Time.get_ticks_usec()
-
 	match options[VoxelMeshImporter.mesh_mode]:
 		VoxelMeshImporter.MeshMode.Default:
 			for model in voxel_data.models:
@@ -24,20 +27,24 @@ func generate(voxel_data: VoxelData, options: Dictionary, path: String = "") -> 
 			for model in voxel_data.models:
 				model.wait_finished()
 			mesh = voxel_data.get_mesh()
-			var mesh_tool = MeshDataTool.new()
-			var new_mesh = ArrayMesh.new()
-			for si in mesh.get_surface_count():
-				mesh_tool.create_from_surface(mesh, si)
-				for i in mesh_tool.get_vertex_count():
-					mesh_tool.set_vertex(i, mesh_tool.get_vertex(i) * scale)
-				mesh_tool.commit_to_surface(new_mesh, si)
-			mesh = new_mesh
+			if mesh:
+				var mesh_tool = MeshDataTool.new()
+				var new_mesh = ArrayMesh.new()
+				for si in mesh.get_surface_count():
+					mesh_tool.create_from_surface(mesh, si)
+					for i in mesh_tool.get_vertex_count():
+						mesh_tool.set_vertex(i, mesh_tool.get_vertex(i) * scale)
+					mesh_tool.commit_to_surface(new_mesh, si)
+				mesh = new_mesh
 		VoxelMeshImporter.MeshMode.MergeSide:
 			start_generate_mesh(voxel_data.get_voxels())
 			wait_finished()
 		VoxelMeshImporter.MeshMode.Merge:
 			start_generate_mesh(voxel_data.get_voxels())
 			wait_finished()
+
+	if not mesh:
+		return null
 
 	if unwrap_lightmap_uv2:
 		mesh.lightmap_unwrap(Transform3D.IDENTITY, scale)

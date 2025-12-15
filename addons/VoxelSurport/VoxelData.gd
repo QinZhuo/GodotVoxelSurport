@@ -89,6 +89,8 @@ class VoxelModel:
 
 
 class VoxelMaterial:
+	var id: int
+
 	var color: Color
 
 	var type: String
@@ -107,6 +109,9 @@ class VoxelMaterial:
 
 	var refraction: float = 0.5
 
+	func _to_string():
+		return str(id, ":", color)
+
 class VoxelNode:
 	var id: int
 	
@@ -116,18 +121,16 @@ class VoxelNode:
 	
 	var child_nodes: Array[int]
 	
-	var frames: Array[VoxelFrame]
+	var frames: Dictionary[int, VoxelFrame]
 
-	var models: Dictionary[VoxelModel, Transform3D]
+	var models: Array
 
 	func get_frame(index: int) -> VoxelFrame:
-		if index >= frames.size():
-			frames.resize(index + 1)
-		if not frames[index]:
+		if not frames.has(index):
 			frames[index] = VoxelFrame.new()
 		return frames[index]
 
-	func get_models(voxel: VoxelData, frame_index: int = 0) -> Dictionary[VoxelModel, Transform3D]:
+	func get_models(voxel: VoxelData, frame_index: int = 0) -> Array:
 		if layerId in voxel.layers and not voxel.layers[layerId].isVisible:
 			return models
 		models.clear()
@@ -138,7 +141,7 @@ class VoxelNode:
 			for task in tasks:
 				WorkerThreadPool.wait_for_task_completion(task)
 			for i in child_nodes:
-				models.merge(voxel.nodes[i].models)
+				models.append_array(voxel.nodes[i].models)
 		if frames.size() > frame_index:
 			frames[frame_index].merge_models(voxel, models)
 		return models
@@ -147,16 +150,20 @@ class VoxelNode:
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var models := get_models(voxel, frame_index)
-		for model in models:
-			surface.append_from(model.mesh, 0, models[model])
+		for i in models.size():
+			var transform: Transform3D = models[i][1]
+			var offset := transform * (Vector3.ONE * 1000) - (Vector3.ONE * 1000)
+
+			surface.append_from(models[i][0].mesh, 0, transform)
 		return surface.commit()
 
 	func get_voxels(voxel: VoxelData, frame_index: int = 0) -> Dictionary[Vector3i, int]:
 		var voxels: Dictionary[Vector3i, int]
 		var models := get_models(voxel, frame_index)
 		var half_step = Vector3(0.5, 0.5, 0.5);
-		for model in models:
-			var transform := models[model]
+		for i in models.size():
+			var model: VoxelModel = models[i][0]
+			var transform: Transform3D = models[i][1]
 			for pos in model.voxels:
 				var new_pos := transform * Vector3(pos)
 				voxels[Vector3i(new_pos)] = model.voxels[pos]
@@ -172,14 +179,14 @@ class VoxelFrame:
 	var transform: Transform3D:
 		get(): return Transform3D(rotation, position)
 
-	func merge_models(voxel: VoxelData, models: Dictionary[VoxelModel, Transform3D]):
+	func merge_models(voxel: VoxelData, models: Array):
 		if model_id >= 0:
 			var model := voxel.models[model_id]
-			models[model] = Transform3D.IDENTITY.translated(model.offset)
+			models.append([model, Transform3D.IDENTITY.translated(model.offset)])
 		if rotation != Basis.IDENTITY or position != Vector3.ZERO:
-			for model in models:
-				var model_transform := models[model]
-				models[model] = transform * model_transform
+			for i in models.size():
+				var model_transform: Transform3D = models[i][1]
+				models[i][1] = transform * model_transform
 
 class VoxelLayer:
 	var id: int;

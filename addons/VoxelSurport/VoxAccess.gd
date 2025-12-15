@@ -1,4 +1,6 @@
 class_name VoxAccess
+## 加载.vox文件方法
+## 已经过大量优化 可以快速加载完大型文件 大块数据加载到buffer后再读取 不要使用FileAccess的get函数 速度很慢 
 
 static func Open(path: String) -> VoxAccess:
 	var time = Time.get_ticks_usec()
@@ -7,154 +9,21 @@ static func Open(path: String) -> VoxAccess:
 	if file == null:
 		return null
 
-	var id = file.get_buffer(4).get_string_from_ascii()
-	if id != "VOX ":
+	if file.get_32() != 0x20584F56:
 		file.close()
 		return null
-	
+		
 	var version = file.get_32()
 	var vox := VoxAccess.new(file)
 	prints("open .vox time:", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	file.close()
 	return vox
 
-func _init(file: FileAccess):
-	_file = file
-	voxel_data = VoxelData.new()
-	voxel_data.materials.resize(256)
-	for i in voxel_data.materials.size():
-		voxel_data.materials[i] = VoxelData.VoxelMaterial.new()
-	while file.get_position() < file.get_length():
-		read_chunk()
-
-var voxel_data: VoxelData
-var _file: FileAccess
-var _chunk_size = 0
-
-func read_chunk():
-	var id = _get_string(4)
-	var size := _get_int()
-	var chunks := _get_int()
-	_chunk_size = size
-	match id:
-		"SIZE":
-			var model := VoxelData.VoxelModel.new()
-			voxel_data.models.append(model)
-			model.size = _get_vector3i()
-		"XYZI":
-			var model := voxel_data.models.back()
-			for i in _get_int():
-				var pos := _get_vector3byte()
-				model.voxels[pos] = _get_byte()
-		"RGBA":
-			var model := voxel_data.models.back()
-			for i in 255:
-				voxel_data.materials[i + 1].color = _get_color()
-		"nTRN":
-			var node := _get_node()
-			node.child_nodes.append(_get_int())
-			_get_int() # reserved id (must be -1)
-			node.layerId = _get_int()
-			for i in _get_int():
-				var frame_attributes := _get_dictionary()
-				var frame_index := int(frame_attributes.get('_f', '0'))
-				var frame := node.get_frame(frame_index)
-				if frame_attributes.has('_t'):
-					var position := frame_attributes['_t'].split_floats(' ')
-					frame.position = Vector3(position[0], position[2], -position[1])
-				if frame_attributes.has('_r'):
-					frame.rotation = decode_rotation(int(frame_attributes['_r']))
-		"nGRP":
-			var node := _get_node()
-			for i in _get_int():
-				node.child_nodes.append(_get_int())
-		"nSHP":
-			var node := _get_node()
-			for i in _get_int():
-				var model_id := _get_int()
-				var model_attributes := _get_dictionary()
-				var frame_index := int(model_attributes.get('_f', '0'))
-				node.get_frame(frame_index).model_id = model_id
-		"MATL":
-			var material_id := _get_int()
-			var material := voxel_data.materials[material_id] if material_id < 256 else VoxelData.VoxelMaterial.new()
-			var attributes := _get_dictionary()
-			material.type = attributes.get("_type", "diffuse")
-
-			material.color.a = 1 - float(attributes.get("_trans", 0))
-
-			material.metal = float(attributes.get("_metal", 0)) if material.type == "_metal" else 0
-			material.specular = float(attributes.get("_sp", 1)) / 2
-
-			material.rough = float(attributes.get("_rough", 0)) if material.type == "_metal" else 1
-			
-			material.emission = float(attributes.get("_emit", 0)) if material.type == "_emit" else 0
-			material.flux = float(attributes.get("_flux", 1))
-			
-			material.refraction = float(attributes.get("_ri", 1.5)) / 3
-
-		"LAYR":
-			var layer := VoxelData.VoxelLayer.new()
-			layer.id = _get_int()
-			layer.isVisible = _get_dictionary().get('_hidden', '0') != '1'
-			voxel_data.layers[layer.id] = layer
-	_get_remaining()
-
-
-func _get_byte() -> int:
-	_chunk_size -= 1
-	return _file.get_8()
-	
-func _get_int() -> int:
-	_chunk_size -= 4
-	return _file.get_32()
-
-func _get_buffer(length) -> PackedByteArray:
-	_chunk_size -= length
-	return _file.get_buffer(length)
-
-func _get_remaining():
-	_get_buffer(_chunk_size)
-	_chunk_size = 0
-
-func _get_string(length):
-	return _get_buffer(length).get_string_from_ascii()
-
-
-func _get_vector3byte() -> Vector3i:
-	var x := _get_byte()
-	var y := _get_byte()
-	var z := _get_byte()
-	return Vector3i(x, z, -y)
-
-func _get_vector3i() -> Vector3i:
-	var x := _get_int()
-	var y := _get_int()
-	var z := _get_int()
-	return Vector3i(x, z, -y)
-
-func _get_color() -> Color:
-	return Color(_get_byte() / 255.0, _get_byte() / 255.0, _get_byte() / 255.0, _get_byte() / 255.0)
-
-func _get_dictionary() -> Dictionary[String, String]:
-	var dictionary: Dictionary[String, String]
-	for _p in range(_get_int()):
-		var key = _get_string(_get_int())
-		dictionary[key] = _get_string(_get_int())
-	return dictionary
-
-func _get_node() -> VoxelData.VoxelNode:
-	var node := VoxelData.VoxelNode.new()
-	node.id = _get_int()
-	node.attributes = _get_dictionary()
-	voxel_data.nodes[node.id] = node
-	return node
-
-static var rot_cache: Dictionary[int, Basis] = {}
-func decode_rotation(byte_value: int) -> Basis:
-	if rot_cache.has(byte_value):
+static var rot_cache: Array
+static func decode_rotation(byte_value: int) -> Basis:
+	if rot_cache[byte_value] != null:
 		return rot_cache[byte_value]
-		
+	
 	var row0_index = byte_value & 3
 	var row1_index = (byte_value >> 2) & 3
 	var row2_index = 3 - row0_index - row1_index
@@ -178,3 +47,121 @@ func decode_rotation(byte_value: int) -> Basis:
 	var rotation := Basis(godot_col0, godot_col1, godot_col2)
 	rot_cache[byte_value] = rotation
 	return rotation
+
+func _init(file: FileAccess):
+	if not rot_cache.size():
+		rot_cache.resize(256)
+	_file = file
+	voxel = VoxelData.new()
+	voxel.materials.resize(256)
+	for i in voxel.materials.size():
+		voxel.materials[i] = VoxelData.VoxelMaterial.new()
+	while file.get_position() < file.get_length():
+		read_chunk()
+
+var voxel: VoxelData
+var _file: FileAccess
+
+func read_chunk():
+	var id := _get_string(4)
+	var size := _get_32()
+	var chunks := _get_32()
+	var end := _file.get_position() + size
+	match id:
+		"SIZE":
+			var model := VoxelData.VoxelModel.new()
+			voxel.models.append(model)
+			model.size = _get_vector3i()
+		"XYZI":
+			var model := voxel.models.back()
+			var num_voxels = _get_32()
+			var buffer = _file.get_buffer(num_voxels * 4)
+			var pos: Vector3i
+			for i in range(num_voxels):
+				var offset = i * 4
+				pos.x = buffer[offset]
+				pos.z = - buffer[offset + 1]
+				pos.y = buffer[offset + 2]
+				var index = buffer[offset + 3]
+				model.voxels[pos] = index
+		"RGBA":
+			var buffer = _file.get_buffer(255 * 4)
+			for i in range(255):
+				var offset = i * 4
+				voxel.materials[i + 1].color = Color(buffer[offset] / 255.0, buffer[offset + 1] / 255.0, buffer[offset + 2] / 255.0, buffer[offset + 3] / 255.0)
+		"nTRN":
+			var node := _get_node()
+			node.child_nodes.append(_get_32())
+			_get_32() # reserved id (must be -1)
+			node.layerId = _get_32()
+			for i in _get_32():
+				var frame_attributes := _get_dictionary()
+				var frame_index := int(frame_attributes.get('_f', '0'))
+				var frame := node.get_frame(frame_index)
+				if frame_attributes.has('_t'):
+					var position := frame_attributes['_t'].split_floats(' ')
+					frame.position = Vector3(position[0], position[2], -position[1])
+				if frame_attributes.has('_r'):
+					frame.rotation = decode_rotation(int(frame_attributes['_r']))
+		"nGRP":
+			var node := _get_node()
+			for i in _get_32():
+				node.child_nodes.append(_get_32())
+		"nSHP":
+			var node := _get_node()
+			for i in _get_32():
+				var model_id := _get_32()
+				var model_attributes := _get_dictionary()
+				var frame_index := int(model_attributes.get('_f', '0'))
+				node.get_frame(frame_index).model_id = model_id
+		"MATL":
+			var material_id := _get_32()
+			var material := voxel.materials[material_id] if material_id < 256 else VoxelData.VoxelMaterial.new()
+			var attributes := _get_dictionary()
+			material.type = attributes.get("_type", "diffuse")
+
+			material.color.a = 1 - float(attributes.get("_trans", 0))
+
+			material.metal = float(attributes.get("_metal", 0)) if material.type == "_metal" else 0
+			material.specular = float(attributes.get("_sp", 1)) / 2
+
+			material.rough = float(attributes.get("_rough", 0)) if material.type == "_metal" else 1
+			
+			material.emission = float(attributes.get("_emit", 0)) if material.type == "_emit" else 0
+			material.flux = float(attributes.get("_flux", 1))
+			
+			material.refraction = float(attributes.get("_ri", 1.5)) / 3
+
+		"LAYR":
+			var layer := VoxelData.VoxelLayer.new()
+			layer.id = _get_32()
+			layer.isVisible = _get_dictionary().get('_hidden', '0') != '1'
+			voxel.layers[layer.id] = layer
+
+	_file.seek(end)
+	
+func _get_32() -> int:
+	return _file.get_32()
+
+func _get_string(length) -> String:
+	return _file.get_buffer(length).get_string_from_ascii()
+
+func _get_vector3i() -> Vector3i:
+	var x := _get_32()
+	var y := _get_32()
+	var z := _get_32()
+	return Vector3i(x, z, -y)
+
+func _get_dictionary() -> Dictionary[String, String]:
+	var dictionary: Dictionary[String, String]
+	for _p in range(_get_32()):
+		var key = _get_string(_get_32())
+		dictionary[key] = _get_string(_get_32())
+	return dictionary
+
+func _get_node() -> VoxelData.VoxelNode:
+	var node := VoxelData.VoxelNode.new()
+	node.id = _get_32()
+	node.attributes = _get_dictionary()
+	voxel.nodes[node.id] = node
+	return node

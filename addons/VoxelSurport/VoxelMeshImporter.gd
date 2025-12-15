@@ -59,7 +59,7 @@ enum MeshMode {
 
 func _import(source_file, save_path, options, _platforms, gen_files):
 	var mesh: ArrayMesh
-	mesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel_data, options, source_file)
+	mesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel, options, source_file)
 	if not mesh:
 		return FAILED
 	return ResourceSaver.save(mesh, "%s.%s" % [save_path, _get_save_extension()])
