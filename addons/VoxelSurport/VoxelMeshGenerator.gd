@@ -149,7 +149,7 @@ func start_generate_mesh(voxels: Dictionary[Vector3i, int], voxel: VoxelData) ->
 			if not slices.has(slice_index):
 				slices[slice_index] = {}
 			slices[slice_index][pos] = voxels[pos]
-	
+
 	tasks.clear()
 	for dir in FaceTool.Faces.size():
 		var task = {dir = dir}
@@ -185,10 +185,16 @@ func _generate_dir_face(task) -> void:
 			var slice_voxels_visible = _get_dir_visible_slice_voxels(slices, axis, task.dir, slice_index)
 			if slice_voxels_visible.size() > 0:
 				var slice = slices[slice_index]
-				for pos in slice:
-					if slice_voxels_visible.has(pos):
-						_generate_voxel_dir_face(slice_voxels_visible, axis, pos, task.dir, surfaces)
+				var pos: Vector3i
+				pos[axis.x] = slice_index
+				for y in range(pos_min[axis.y], pos_max[axis.y] + 1):
+					pos[axis.y] = y
+					for z in range(pos_min[axis.z], pos_max[axis.z] + 1):
+						pos[axis.z] = z
+						if slice_voxels_visible.has(pos):
+							_generate_voxel_dir_face(slice_voxels_visible, axis, pos, task.dir, surfaces)
 	task.meshes = [surfaces[0].commit(), surfaces[1].commit()]
+
 
 func _get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int, slice_index: int) -> Dictionary:
 	var voxels := {}
@@ -223,12 +229,12 @@ func _generate_voxel_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i,
 		surface.add_vertex((point * size + Vector3(pos)) * scale)
 	
 	var cur_pos := pos
-	for z in range(z_size):
-		cur_pos[axis.y] = pos[axis.y]
-		for y in range(y_size):
+	for y in y_size:
+		cur_pos[axis.z] = pos[axis.z]
+		for z in z_size:
 			voxels.erase(cur_pos)
-			cur_pos[axis.y] += 1
-		cur_pos[axis.z] += 1
+			cur_pos[axis.z] += 1
+		cur_pos[axis.y] += 1
 
 func _get_y_size(voxels: Dictionary, pos: Vector3i, axis_y: int, max_size: int = -1) -> int:
 	var value: int = voxels[pos]
