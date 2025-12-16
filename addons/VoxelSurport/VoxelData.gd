@@ -148,7 +148,7 @@ class VoxelNode:
 		return voxels
 
 	func _to_string() -> String:
-		return str(id, ' ', child_nodes)
+		return str(id, ' childs: ', child_nodes, ' frames: ', frames)
 
 class VoxelFrame:
 	var model_id: int = -1
@@ -169,6 +169,8 @@ class VoxelFrame:
 				var model_transform: Transform3D = models[i][1]
 				models[i][1] = transform * model_transform
 
+	func _to_string() -> String:
+		return str(model_id, ' position: ', position, ' rotation: ', rotation)
 
 class VoxelLayer:
 	var id: int;
