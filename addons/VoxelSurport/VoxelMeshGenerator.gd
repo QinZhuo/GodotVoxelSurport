@@ -73,7 +73,7 @@ func generate_material(save_path: String = "") -> StandardMaterial3D:
 	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
 	if material is StandardMaterial3D:
 		material.emission_enabled = true
-		material.emission_energy_multiplier = 16
+		material.emission_energy_multiplier = 20
 		material.metallic = 1
 		material.albedo_texture = generate_albedo_textrue(save_path)
 		material.metallic_texture = generate_metal_textrue(save_path)
