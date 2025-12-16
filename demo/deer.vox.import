@@ -1,6 +1,6 @@
 [remap]
 
-importer="voxel_surport.voxel.mesh"
+importer="voxel_mesh"
 type="Mesh"
 uid="uid://gflclp0kkff2"
 path="res://.godot/imported/deer.vox-e5d415c2526e1668330e5e4349c72db6.mesh"

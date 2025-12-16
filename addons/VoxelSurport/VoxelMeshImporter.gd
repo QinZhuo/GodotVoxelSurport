@@ -3,7 +3,7 @@ class_name VoxelMeshImporter
 extends EditorImportPlugin
 
 func _get_importer_name():
-	return 'voxel_surport.voxel.mesh'
+	return 'voxel_mesh'
 
 func _get_visible_name():
 	return "Voxel Mesh"
