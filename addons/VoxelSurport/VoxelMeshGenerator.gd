@@ -68,10 +68,8 @@ func change_mesh_scale(scale: float):
 
 func generate_material(save_path: String = "") -> StandardMaterial3D:
 	var path := save_path.get_basename() + '_mat.tres'
-	if FileAccess.file_exists(path):
-		return ResourceLoader.load(path)
-	else:
-		var material := StandardMaterial3D.new()
+	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
+	if material is StandardMaterial3D:
 		material.emission_enabled = true
 		material.emission_energy_multiplier = 16
 		material.metallic = 1
@@ -82,20 +80,26 @@ func generate_material(save_path: String = "") -> StandardMaterial3D:
 		if save_path:
 			material.resource_path = path
 			ResourceSaver.save(material)
-		return material
+	else:
+		generate_albedo_textrue(save_path)
+		generate_metal_textrue(save_path)
+		generate_rough_textrue(save_path)
+		generate_emission_textrue(save_path)
+	return material
 
 func generate_material_trans(base: Material, save_path: String = "") -> StandardMaterial3D:
 	var path := save_path.get_basename() + '_mat_trans.tres'
-	if FileAccess.file_exists(path):
-		return ResourceLoader.load(path)
-	else:
-		var material: StandardMaterial3D = base.duplicate() if base is StandardMaterial3D else StandardMaterial3D.new()
+	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else base.duplicate() if base else StandardMaterial3D.new()
+	if material is StandardMaterial3D:
 		material.refraction_enabled = true
+		material.emission_enabled = false
 		material.transparency = BaseMaterial3D.Transparency.TRANSPARENCY_ALPHA
 		if save_path:
 			material.resource_path = path
 			ResourceSaver.save(material)
-		return material
+	else:
+		pass
+	return material
 
 func _generate_texture(get_pixel: Callable, save_path: String, type: String) -> ImageTexture:
 	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
@@ -196,8 +200,9 @@ func _get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int,
 		return slice.duplicate()
 	
 	var dir_slice = slices[dir_slice_index]
-	for pos in slice:
-		if !dir_slice.has(pos + offset):
+	for pos: Vector3i in slice:
+		var dir_pos: Vector3i = pos + offset
+		if !dir_slice.has(dir_pos) or voxel.materials[dir_slice[dir_pos]].is_transparent != voxel.materials[slice[pos]].is_transparent:
 			voxels[pos] = slice[pos]
 	return voxels
 
@@ -234,8 +239,8 @@ func _get_y_size(voxels: Dictionary, pos: Vector3i, axis_y: int, max_size: int =
 	while voxels.has(cur_pos) and voxels[cur_pos] == value:
 		cur_pos[axis_y] += 1
 		size += 1
-		if max_size > 0 and size >= max_size:
-			break
+		# if max_size > 0 and size >= max_size:
+		# 	break
 	return size
 
 func _get_z_size(voxels: Dictionary, pos: Vector3i, axis: Vector3i, y_size: int) -> int:
