@@ -30,6 +30,10 @@ func _get_import_options(path, preset):
 			default_value = 0.1,
 		},
 		{
+			name = frame_index,
+			default_value = 0,
+		},
+		{
 			name = unwrap_lightmap_uv2,
 			default_value = false,
 		},
@@ -43,7 +47,8 @@ func _get_import_options(path, preset):
 			hint_string = "Material"
 		},
 	]
-	
+
+const frame_index := "mesh/frame_index"
 const mesh_mode := "mesh/mode"
 const scale := "mesh/scale"
 const unwrap_lightmap_uv2 := "mesh/unwrap_lightmap_uv2"

@@ -8,14 +8,22 @@ var nodes: Dictionary[int, VoxelNode]
 
 var layers: Dictionary[int, VoxelLayer]
 
-func get_voxels() -> Dictionary[Vector3i, int]:
+func get_voxels(frame_index: int = 0) -> Dictionary[Vector3i, int]:
 	if nodes.size() > 0:
-		return nodes[0].get_voxels(self)
+		return nodes[frame_index].get_voxels(self, frame_index)
+	elif models.size() > 0:
+		var node := VoxelNode.new()
+		node.models.append(models[frame_index])
+		return node.get_voxels(self, frame_index)
 	return {}
 
-func get_mesh() -> ArrayMesh:
+func get_mesh(frame_index: int = 0) -> ArrayMesh:
 	if nodes.size() > 0:
-		return nodes[0].get_mesh(self)
+		return nodes[frame_index].get_mesh(self, frame_index)
+	elif models.size() > 0:
+		var node := VoxelNode.new()
+		node.models.append(models[frame_index])
+		return node.get_mesh(self, frame_index)
 	return null
 
 func generate_models_mesh():
@@ -24,13 +32,8 @@ func generate_models_mesh():
 	for model in models:
 		model.wait_finished()
 
-func generate_models_voxels_array():
-	var tasks = []
-	for model in models:
-		tasks.append(WorkerThreadPool.add_task(model.generate_voxels_array.bind(self)))
-	for task in tasks:
-		WorkerThreadPool.wait_for_task_completion(task)
-
+func _to_string() -> String:
+	return str("nodes:", nodes, "models:", models)
 
 class VoxelModel:
 	var size: Vector3:
@@ -42,23 +45,9 @@ class VoxelModel:
 
 	var voxels: Dictionary[Vector3i, int]
 
-	var voxels_array: Array[Dictionary]
-
 	var mesh: ArrayMesh
 
 	var _generator: VoxelMeshGenerator
-
-	func generate_voxels_array(voxel: VoxelData):
-		voxels_array.resize(2)
-		var base_voxels := voxels_array[0]
-		var trans_voxels := voxels_array[1]
-		for pos in voxels:
-			var id := voxels[pos]
-			if voxel.materials[id].is_transparent:
-				trans_voxels[pos] = id
-			else:
-				base_voxels[pos] = id
-
 
 	func start_generate_mesh(voxel: VoxelData):
 		if mesh:
@@ -72,6 +61,8 @@ class VoxelModel:
 			_generator = null
 		return mesh
 
+	func _to_string() -> String:
+		return str(voxels.size())
 
 class VoxelMaterial:
 	var id: int
@@ -104,7 +95,7 @@ class VoxelNode:
 	var frames: Dictionary[int, VoxelFrame]
 
 	var models: Array
-
+	
 	func get_frame(index: int) -> VoxelFrame:
 		if not frames.has(index):
 			frames[index] = VoxelFrame.new()
@@ -156,6 +147,8 @@ class VoxelNode:
 				voxels[Vector3i(new_pos)] = model.voxels[pos]
 		return voxels
 
+	func _to_string() -> String:
+		return str(id, ' ', child_nodes)
 
 class VoxelFrame:
 	var model_id: int = -1

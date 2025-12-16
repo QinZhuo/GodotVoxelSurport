@@ -146,6 +146,9 @@ func read_chunk():
 			layer.isVisible = _get_dictionary().get('_hidden', '0') != '1'
 			voxel.layers[layer.id] = layer
 
+		_:
+			pass
+
 	_file.seek(end)
 	
 func _get_32() -> int:

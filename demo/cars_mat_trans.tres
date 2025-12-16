@@ -14,3 +14,4 @@ roughness_texture = ExtResource("4_cv38c")
 emission_energy_multiplier = 16.0
 emission_texture = ExtResource("2_vw5q1")
 refraction_enabled = true
+refraction_scale = 0.01

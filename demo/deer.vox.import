@@ -1,0 +1,20 @@
+[remap]
+
+importer="voxel_surport.voxel.mesh"
+type="Mesh"
+uid="uid://gflclp0kkff2"
+path="res://.godot/imported/deer.vox-e5d415c2526e1668330e5e4349c72db6.mesh"
+
+[deps]
+
+source_file="res://demo/deer.vox"
+dest_files=["res://.godot/imported/deer.vox-e5d415c2526e1668330e5e4349c72db6.mesh"]
+
+[params]
+
+mesh/mode=0
+mesh/scale=0.1
+mesh/frame_index=0
+mesh/unwrap_lightmap_uv2=false
+material/import_materials_textures=false
+material/materials=[Resource("uid://l4wr43f2a4rn", "res://demo/cars_mat.tres")]

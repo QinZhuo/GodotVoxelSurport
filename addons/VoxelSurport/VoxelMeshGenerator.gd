@@ -12,9 +12,11 @@ var materials: Array
 var tasks: Array
 var mesh: Mesh
 var voxel: VoxelData
+var frame_index: int
 
 func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> ArrayMesh:
 	self.voxel = voxel
+	frame_index = options[VoxelMeshImporter.frame_index]
 	scale = options[VoxelMeshImporter.scale]
 	if scale <= 0:
 		scale = 0.01
@@ -25,15 +27,15 @@ func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> Array
 	match options[VoxelMeshImporter.mesh_mode]:
 		VoxelMeshImporter.MeshMode.Default:
 			voxel.generate_models_mesh()
-			mesh = voxel.get_mesh()
+			mesh = voxel.get_mesh(frame_index)
 			change_mesh_scale(scale)
 		VoxelMeshImporter.MeshMode.MergeSide:
-			start_generate_mesh(voxel.get_voxels(), voxel)
+			start_generate_mesh(voxel.get_voxels(frame_index), voxel)
 			wait_finished()
 		VoxelMeshImporter.MeshMode.Merge:
-			start_generate_mesh(voxel.get_voxels(), voxel)
+			start_generate_mesh(voxel.get_voxels(frame_index), voxel)
 			wait_finished()
-
+	
 	if not mesh:
 		return null
 
@@ -92,6 +94,7 @@ func generate_material_trans(base: Material, save_path: String = "") -> Standard
 	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else base.duplicate() if base else StandardMaterial3D.new()
 	if material is StandardMaterial3D:
 		material.refraction_enabled = true
+		material.refraction_scale = 0.01
 		material.emission_enabled = false
 		material.transparency = BaseMaterial3D.Transparency.TRANSPARENCY_ALPHA
 		if save_path:
@@ -207,8 +210,18 @@ func _get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int,
 	
 	var dir_slice = slices[dir_slice_index]
 	for pos: Vector3i in slice:
+		var visible := false
 		var dir_pos: Vector3i = pos + offset
-		if !dir_slice.has(dir_pos) or voxel.materials[dir_slice[dir_pos]].is_transparent != voxel.materials[slice[pos]].is_transparent:
+		if dir_slice.has(dir_pos):
+			var mat := voxel.materials[slice[pos]]
+			var dir_mat := voxel.materials[dir_slice[dir_pos]]
+			if mat.is_transparent != dir_mat.is_transparent:
+				visible = true
+			elif mat.is_transparent and mat != dir_mat:
+				visible = true
+		else:
+			visible = true
+		if visible:
 			voxels[pos] = slice[pos]
 	return voxels
 
