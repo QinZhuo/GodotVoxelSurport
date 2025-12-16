@@ -239,8 +239,8 @@ func _get_y_size(voxels: Dictionary, pos: Vector3i, axis_y: int, max_size: int =
 	while voxels.has(cur_pos) and voxels[cur_pos] == value:
 		cur_pos[axis_y] += 1
 		size += 1
-		# if max_size > 0 and size >= max_size:
-		# 	break
+		if max_size > 0 and size >= max_size:
+			break
 	return size
 
 func _get_z_size(voxels: Dictionary, pos: Vector3i, axis: Vector3i, y_size: int) -> int:
