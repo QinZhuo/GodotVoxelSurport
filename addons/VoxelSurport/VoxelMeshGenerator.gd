@@ -6,9 +6,6 @@ var pos_min: Vector3i
 var pos_max: Vector3i
 var slice_voxels: Array[Dictionary]
 var scale: float = 1
-var import_materials_textures: bool
-var unwrap_lightmap_uv2: bool
-var materials: Array
 var tasks: Array
 var mesh: Mesh
 var voxel: VoxelData
@@ -20,10 +17,7 @@ func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> Array
 	scale = options[VoxelMeshImporter.scale]
 	if scale <= 0:
 		scale = 0.01
-	import_materials_textures = options[VoxelMeshImporter.import_materials_textures]
-	unwrap_lightmap_uv2 = options[VoxelMeshImporter.unwrap_lightmap_uv2]
-	materials = [ResourceLoader.load(options[VoxelMeshImporter.material_path]),
-		ResourceLoader.load(options[VoxelMeshImporter.material_trans_path])]
+	
 	var time = Time.get_ticks_usec()
 	match options[VoxelMeshImporter.mesh_mode]:
 		VoxelMeshImporter.MeshMode.Merge:
@@ -36,18 +30,20 @@ func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> Array
 	if not mesh:
 		return null
 
-	if unwrap_lightmap_uv2:
-		mesh.lightmap_unwrap(Transform3D.IDENTITY, scale)
+	if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
+		mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
 	
-	if import_materials_textures:
-		var mat := generate_material(path if import_materials_textures else "")
+	if options[VoxelMeshImporter.import_materials_textures]:
+		var mat := generate_material(path)
 		mesh.surface_set_material(0, mat)
 		if mesh.get_surface_count() > 1:
-			var trans_mat := generate_material_trans(mat, path if import_materials_textures else "")
+			var trans_mat := generate_material_trans(mat, path)
 			mesh.surface_set_material(1, trans_mat)
 	else:
-		for i in materials.size():
-			mesh.surface_set_material(i, materials[i])
+		if options[VoxelMeshImporter.material_path]:
+			mesh.surface_set_material(0, ResourceLoader.load(options[VoxelMeshImporter.material_path]))
+		else:
+			mesh.surface_set_material(1, ResourceLoader.load(options[VoxelMeshImporter.material_trans_path]))
 
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
 
@@ -159,7 +155,7 @@ func start_generate_mesh(voxels: Dictionary[Vector3i, int], voxel: VoxelData) ->
 func wait_finished() -> ArrayMesh:
 	if not mesh and tasks.size() > 0:
 		mesh = ArrayMesh.new()
-		var surface = SurfaceTool.new()
+		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		for task in tasks:
 			WorkerThreadPool.wait_for_task_completion(task.id)
@@ -223,11 +219,15 @@ func _get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int,
 	return voxels
 
 func _generate_voxel_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i, dir: int, surfaces: Array[SurfaceTool]) -> void:
-	var y_size: int = _get_y_size(voxels, pos, axis.y)
-	var z_size: int = _get_z_size(voxels, pos, axis, y_size)
+	var length: int = _get_max_length(voxels, pos, axis.y)
+	var width: int = _get_max_size_width(voxels, pos, axis.z, axis.y, length)
 	var size: Vector3 = Vector3.ONE
-	size[axis.y] = y_size
-	size[axis.z] = z_size
+	size[axis.y] = length
+	size[axis.z] = width
+	_generate_size_dir_face(voxels, axis, pos, size, dir, surfaces)
+
+
+func _generate_size_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i, size: Vector3, dir: int, surfaces: Array[SurfaceTool]):
 	var id: int = voxels[pos]
 	var uv := Vector2((id + 0.5) / 256.0, 0.5)
 	
@@ -239,33 +239,36 @@ func _generate_voxel_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i,
 		surface.add_vertex((point * size + Vector3(pos)) * scale)
 	
 	var cur_pos := pos
-	for y in y_size:
+	var y_max := size[axis.y]
+	var z_max := size[axis.z]
+	for y in y_max:
 		cur_pos[axis.z] = pos[axis.z]
-		for z in z_size:
+		for z in z_max:
 			voxels.erase(cur_pos)
 			cur_pos[axis.z] += 1
 		cur_pos[axis.y] += 1
 
-func _get_y_size(voxels: Dictionary, pos: Vector3i, axis_y: int, max_size: int = -1) -> int:
+
+func _get_max_length(voxels: Dictionary, pos: Vector3i, axis: int, max_length: int = -1) -> int:
 	var value: int = voxels[pos]
 	var cur_pos: Vector3i = pos
-	cur_pos[axis_y] += 1
+	cur_pos[axis] += 1
 	var size := 1
 	
 	while voxels.has(cur_pos) and voxels[cur_pos] == value:
-		cur_pos[axis_y] += 1
+		cur_pos[axis] += 1
 		size += 1
-		if max_size > 0 and size >= max_size:
+		if max_length > 0 and size >= max_length:
 			break
 	return size
 
-func _get_z_size(voxels: Dictionary, pos: Vector3i, axis: Vector3i, y_size: int) -> int:
+func _get_max_size_width(voxels: Dictionary, pos: Vector3i, width_axis: int, length_axis: int, length: int) -> int:
 	var value: int = voxels[pos]
 	var cur_pos: Vector3i = pos
-	cur_pos[axis.z] += 1
+	cur_pos[width_axis] += 1
 	var size := 1
 	
-	while voxels.has(cur_pos) and voxels[cur_pos] == value and _get_y_size(voxels, cur_pos, axis.y, y_size) >= y_size:
-		cur_pos[axis.z] += 1
+	while voxels.has(cur_pos) and voxels[cur_pos] == value and _get_max_length(voxels, cur_pos, length_axis, length) >= length:
+		cur_pos[width_axis] += 1
 		size += 1
 	return size

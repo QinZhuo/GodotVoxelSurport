@@ -38,6 +38,12 @@ func _get_import_options(path, preset):
 			default_value = false,
 		},
 		{
+			name = uv2_texel_size,
+			default_value = 0.2,
+			property_hint = PropertyHint.PROPERTY_HINT_RANGE,
+			hint_string = "0.01,100,0.001"
+		},
+		{
 			name = import_materials_textures,
 			default_value = false,
 		},
@@ -59,6 +65,7 @@ const frame_index := "mesh/frame_index"
 const mesh_mode := "mesh/mode"
 const scale := "mesh/scale"
 const unwrap_lightmap_uv2 := "mesh/unwrap_lightmap_uv2"
+const uv2_texel_size := "mesh/uv2_texel_size"
 const material_path := "material_path/material_path"
 const material_trans_path := "material_path/material_trans_path"
 const import_materials_textures := "material_path/import_materials_textures"
