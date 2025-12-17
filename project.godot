@@ -34,3 +34,7 @@ voxel_surport.link_res.vol.array_mesh={
 voxel_surport.vol.array_mesh={
 &"add_uv2": true
 }
+voxel_mesh={
+&"material_path/material_path": "uid://l4wr43f2a4rn",
+&"material_path/material_trans_path": "uid://cn7mntwkbv1p7"
+}

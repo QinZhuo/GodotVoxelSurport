@@ -21,9 +21,9 @@ func _get_import_options(path, preset):
 	return [
 		{
 			name = mesh_mode,
-			default_value = MeshMode.Default,
+			default_value = MeshMode.Merge,
 			property_hint = PropertyHint.PROPERTY_HINT_ENUM,
-			hint_string = "Default,SideMerge,Merge"
+			hint_string = "Merge,Default"
 		},
 		{
 			name = scale,
@@ -42,9 +42,16 @@ func _get_import_options(path, preset):
 			default_value = false,
 		},
 		{
-			name = materials,
-			default_value = [],
-			hint_string = "Material"
+			name = material_path,
+			default_value = "",
+			property_hint = PropertyHint.PROPERTY_HINT_FILE,
+			hint_string = "*tres,*res"
+		},
+		{
+			name = material_trans_path,
+			default_value = "",
+			property_hint = PropertyHint.PROPERTY_HINT_FILE,
+			hint_string = "*tres,*res"
 		},
 	]
 
@@ -52,13 +59,13 @@ const frame_index := "mesh/frame_index"
 const mesh_mode := "mesh/mode"
 const scale := "mesh/scale"
 const unwrap_lightmap_uv2 := "mesh/unwrap_lightmap_uv2"
-const materials := "material/materials"
-const import_materials_textures := "material/import_materials_textures"
+const material_path := "material_path/material_path"
+const material_trans_path := "material_path/material_trans_path"
+const import_materials_textures := "material_path/import_materials_textures"
 
 enum MeshMode {
-	Default,
-	MergeSide,
 	Merge,
+	Default,
 }
 
 func _import(source_file, save_path, options, _platforms, gen_files):

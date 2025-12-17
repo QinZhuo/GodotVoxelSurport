@@ -22,20 +22,17 @@ func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> Array
 		scale = 0.01
 	import_materials_textures = options[VoxelMeshImporter.import_materials_textures]
 	unwrap_lightmap_uv2 = options[VoxelMeshImporter.unwrap_lightmap_uv2]
-	materials = options[VoxelMeshImporter.materials]
+	materials = [ResourceLoader.load(options[VoxelMeshImporter.material_path]),
+		ResourceLoader.load(options[VoxelMeshImporter.material_trans_path])]
 	var time = Time.get_ticks_usec()
 	match options[VoxelMeshImporter.mesh_mode]:
+		VoxelMeshImporter.MeshMode.Merge:
+			start_generate_mesh(voxel.get_voxels(frame_index), voxel)
+			wait_finished()
 		VoxelMeshImporter.MeshMode.Default:
 			voxel.generate_models_mesh()
 			mesh = voxel.get_mesh(frame_index)
 			change_mesh_scale(scale)
-		VoxelMeshImporter.MeshMode.MergeSide:
-			start_generate_mesh(voxel.get_voxels(frame_index), voxel)
-			wait_finished()
-		VoxelMeshImporter.MeshMode.Merge:
-			start_generate_mesh(voxel.get_voxels(frame_index), voxel)
-			wait_finished()
-	
 	if not mesh:
 		return null
 
