@@ -8,7 +8,7 @@
 - Merge models
 - Multi-threaded Mesh generation
 - Automatically generate metal, roughness, emissive, and other maps
-- Solves the issue of slow import and crashing when importing .vox models larger than 255*255*255
+- Solves the issue of slow import and crashing when importing .vox models larger than 256x256x256
 
 ![](/images/cards.png)
 ![](/images/teapot.png)
