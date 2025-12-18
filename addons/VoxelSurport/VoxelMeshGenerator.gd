@@ -42,7 +42,7 @@ func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> Array
 	else:
 		if options[VoxelMeshImporter.material_path]:
 			mesh.surface_set_material(0, ResourceLoader.load(options[VoxelMeshImporter.material_path]))
-		else:
+		if options[VoxelMeshImporter.material_trans_path]:
 			mesh.surface_set_material(1, ResourceLoader.load(options[VoxelMeshImporter.material_trans_path]))
 
 	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
