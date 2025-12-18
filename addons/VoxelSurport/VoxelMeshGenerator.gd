@@ -220,7 +220,7 @@ func _get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int,
 
 func _generate_voxel_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i, dir: int, surfaces: Array[SurfaceTool]) -> void:
 	var length: int = _get_max_length(voxels, pos, axis.y)
-	var width: int = _get_max_size_width(voxels, pos, axis.z, axis.y, length)
+	var width: int = _get_max_width(voxels, pos, axis.z, axis.y, length)
 	var size: Vector3 = Vector3.ONE
 	size[axis.y] = length
 	size[axis.z] = width
@@ -262,7 +262,7 @@ func _get_max_length(voxels: Dictionary, pos: Vector3i, axis: int, max_length: i
 			break
 	return size
 
-func _get_max_size_width(voxels: Dictionary, pos: Vector3i, width_axis: int, length_axis: int, length: int) -> int:
+func _get_max_width(voxels: Dictionary, pos: Vector3i, width_axis: int, length_axis: int, length: int) -> int:
 	var value: int = voxels[pos]
 	var cur_pos: Vector3i = pos
 	cur_pos[width_axis] += 1
