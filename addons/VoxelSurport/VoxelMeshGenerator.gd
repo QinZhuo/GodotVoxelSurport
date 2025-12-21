@@ -29,7 +29,7 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 			for i in voxel.models.size():
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				gen.start_generate_mesh(voxel.models[i].get_voxels(), str(i))
+				gen.start_generate_mesh(voxel.models[i].get_voxels(), "model_" + str(i))
 				gens.append(gen)
 					
 		VoxelMeshLibraryImporter.MeshMode.split_by_node:
@@ -57,7 +57,8 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 		voxel_mesh_library.create_item(i)
 		voxel_mesh_library.set_item_mesh(i, child_mesh)
 		if options[VoxelMeshLibraryImporter.import_meshes] and path:
-			var child_path := path.get_basename() + "_" + child_mesh.resource_name + ".res"
+			DirAccess.make_dir_absolute(path.get_basename())
+			var child_path := path.get_basename() + "/" + child_mesh.resource_name + ".res"
 			ResourceSaver.save(child_mesh, child_path)
 			child_mesh.take_over_path(child_path)
 	reload_scenes()
@@ -110,7 +111,8 @@ func generate_materials(options: Dictionary) -> Array[Material]:
 	return materials
 
 func generate_material(save_path: String = "") -> StandardMaterial3D:
-	var path := save_path.get_basename() + '_mat.tres'
+	var path := save_path.get_basename() + '/mat.tres'
+	DirAccess.make_dir_absolute(save_path.get_basename())
 	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
 	if material is StandardMaterial3D:
 		material.emission_enabled = true
@@ -131,7 +133,8 @@ func generate_material(save_path: String = "") -> StandardMaterial3D:
 	return material
 
 func generate_material_trans(base: Material, save_path: String = "") -> StandardMaterial3D:
-	var path := save_path.get_basename() + '_mat_trans.tres'
+	var path := save_path.get_basename() + '/mat_trans.tres'
+	DirAccess.make_dir_absolute(save_path.get_basename())
 	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else base.duplicate() if base else StandardMaterial3D.new()
 	if material is StandardMaterial3D:
 		material.refraction_enabled = true
@@ -148,9 +151,10 @@ func generate_material_trans(base: Material, save_path: String = "") -> Standard
 func _generate_texture(get_pixel: Callable, save_path: String, type: String) -> ImageTexture:
 	var image := Image.create(256, 1, false, Image.FORMAT_RGBA8)
 	for x in 256:
-		var color := get_pixel.call(voxel.materials[x])
+		var color: Color = get_pixel.call(voxel.materials[x])
 		image.set_pixel(x, 0, color)
-	var path := save_path.get_basename() + '_' + type + '.tres'
+	DirAccess.make_dir_absolute(save_path.get_basename())
+	var path := save_path.get_basename() + '/tex_' + type + '.tres'
 	var texture: ImageTexture = ResourceLoader.load(path) if FileAccess.file_exists(path) else ImageTexture.create_from_image(image)
 	texture.set_image(image)
 	if save_path:
@@ -159,16 +163,16 @@ func _generate_texture(get_pixel: Callable, save_path: String, type: String) -> 
 	return texture
 
 func generate_albedo_textrue(save_path: String = "") -> ImageTexture:
-	return _generate_texture(func(m): return m.color, save_path, "albedo")
+	return _generate_texture(func(m: VoxelData.VoxelMaterial): return m.color if not m.is_transparent else Color(m.color.r, m.color.g, m.color.b, 1 - m.trans), save_path, "albedo")
 
 func generate_metal_textrue(save_path: String = "") -> ImageTexture:
-	return _generate_texture(func(m): return Color.from_hsv(0, 0, m.metal), save_path, "metal")
+	return _generate_texture(func(m: VoxelData.VoxelMaterial): return Color.from_hsv(0, 0, m.metal), save_path, "metal")
 
 func generate_rough_textrue(save_path: String = "") -> ImageTexture:
-	return _generate_texture(func(m): return Color.from_hsv(0, 0, m.rough), save_path, "rough")
+	return _generate_texture(func(m: VoxelData.VoxelMaterial): return Color.from_hsv(0, 0, m.rough), save_path, "rough")
 
 func generate_emission_textrue(save_path: String = "") -> ImageTexture:
-	return _generate_texture(func(m): return m.color * m.emission, save_path, "emission")
+	return _generate_texture(func(m: VoxelData.VoxelMaterial): return m.color * m.emission, save_path, "emission")
 
 
 func start_generate_mesh(voxels: Dictionary[Vector3i, int], resource_name: String = "") -> void:

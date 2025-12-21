@@ -62,12 +62,10 @@ class VoxelMaterial:
 
 	var color: Color
 
-	var is_transparent: bool = false
+	var is_transparent: bool:
+		get(): return trans > 0
 
-	var alpha: float = 1:
-		set(value):
-			if is_transparent:
-				color.a = value
+	var trans: float = 0
 
 	var metal: float = 0
 
