@@ -26,73 +26,49 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 
 	match options[VoxelMeshLibraryImporter.mesh_mode]:
 		VoxelMeshLibraryImporter.MeshMode.split_by_model:
-			for model in voxel.models:
+			for i in voxel.models.size():
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				gen.start_generate_mesh(model.voxels)
+				gen.start_generate_mesh(voxel.models[i].get_voxels(), str(i))
 				gens.append(gen)
-
-			for i in gens.size():
-				var child_mesh := gens[i].wait_finished()
-				if not child_mesh:
-					continue
-				var model := voxel.models[i]
-				child_mesh.resource_name = str(i)
-
-				if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
-					child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
-
-				voxel_mesh_library.create_item(i)
-				voxel_mesh_library.set_item_mesh(i, child_mesh)
-				if options[VoxelMeshLibraryImporter.import_meshes] and path:
-					ResourceSaver.save(child_mesh, path.get_basename() + "_" + child_mesh.resource_name + ".res")
-
+					
 		VoxelMeshLibraryImporter.MeshMode.split_by_node:
 			var root_node := voxel.nodes[voxel.nodes[0].child_nodes[0]]
 			for node_id in root_node.child_nodes:
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				gen.start_generate_mesh(voxel.nodes[node_id].get_voxels(voxel, root_gen.frame_index))
+				var node := voxel.nodes[node_id]
+				gen.start_generate_mesh(node.get_voxels(voxel, root_gen.frame_index, true), node.get_name(voxel, root_gen.frame_index))
 				gens.append(gen)
-
-			for i in gens.size():
-				var child_mesh := gens[i].wait_finished()
-				if not child_mesh:
-					continue
-				var node := voxel.nodes[root_node.child_nodes[i]]
-				child_mesh.resource_name = node.get_name(voxel, root_gen.frame_index)
-
-				if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
-					child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
-
-				voxel_mesh_library.create_item(i)
-				voxel_mesh_library.set_item_mesh(i, child_mesh)
-				if options[VoxelMeshLibraryImporter.import_meshes] and path:
-					ResourceSaver.save(child_mesh, path.get_basename() + "_" + child_mesh.resource_name + ".res")
-
+					
 		VoxelMeshLibraryImporter.MeshMode.split_by_frame:
 			for i in root_gen.frame_index + 1:
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				gen.start_generate_mesh(voxel.get_voxels(i))
+				gen.start_generate_mesh(voxel.get_voxels(i), "frame_" + str(i))
 				gens.append(gen)
-
-			for i in gens.size():
-				var child_mesh := gens[i].wait_finished()
-				if not child_mesh:
-					continue
-				child_mesh.resource_name = "frame_" + str(i)
-
-				if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
-					child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
-
-				voxel_mesh_library.create_item(i)
-				voxel_mesh_library.set_item_mesh(i, child_mesh)
-				if options[VoxelMeshLibraryImporter.import_meshes] and path:
-					ResourceSaver.save(child_mesh, path.get_basename() + "_" + child_mesh.resource_name + ".res")
 	
+	for i in gens.size():
+		var child_mesh := gens[i].wait_finished()
+		if not child_mesh:
+			continue
+		if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
+			child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
+		voxel_mesh_library.create_item(i)
+		voxel_mesh_library.set_item_mesh(i, child_mesh)
+		if options[VoxelMeshLibraryImporter.import_meshes] and path:
+			var child_path := path.get_basename() + "_" + child_mesh.resource_name + ".res"
+			ResourceSaver.save(child_mesh, child_path)
+			child_mesh.take_over_path(child_path)
+	reload_scenes()
 	prints("generate_mesh_library mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	return voxel_mesh_library
+
+static func reload_scenes():
+	var scenes := EditorInterface.get_open_scenes()
+	for scene in scenes:
+		if scene and not scene.is_empty():
+			EditorInterface.reload_scene_from_path(scene)
 
 var pos_min: Vector3i
 var pos_max: Vector3i
@@ -195,7 +171,10 @@ func generate_emission_textrue(save_path: String = "") -> ImageTexture:
 	return _generate_texture(func(m): return m.color * m.emission, save_path, "emission")
 
 
-func start_generate_mesh(voxels: Dictionary[Vector3i, int]) -> void:
+func start_generate_mesh(voxels: Dictionary[Vector3i, int], resource_name: String = "") -> void:
+	mesh = ArrayMesh.new()
+	if resource_name:
+		mesh.resource_name = resource_name
 	pos_min = Vector3i.MAX
 	pos_max = Vector3i.MIN
 	
@@ -224,8 +203,7 @@ func start_generate_mesh(voxels: Dictionary[Vector3i, int]) -> void:
 		task.id = WorkerThreadPool.add_task(_generate_dir_face.bind(task))
 		
 func wait_finished() -> ArrayMesh:
-	if not mesh and tasks.size() > 0:
-		mesh = ArrayMesh.new()
+	if tasks.size() > 0:
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		for task in tasks:

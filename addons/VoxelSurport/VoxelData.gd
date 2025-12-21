@@ -28,8 +28,15 @@ func check_nodes():
 			node.frames[i] = frame
 			return nodes
 
+
 func _to_string() -> String:
 	return str("nodes:", nodes, "models:", models)
+
+static func get_offset_voxels(voxels: Dictionary[Vector3i, int], offset: Vector3i):
+	var result: Dictionary[Vector3i, int]
+	for pos in voxels:
+		result[pos + offset] = voxels[pos]
+	return result
 
 class VoxelModel:
 	var size: Vector3:
@@ -46,6 +53,9 @@ class VoxelModel:
 
 	func _to_string() -> String:
 		return str(voxels.size(), ' ', size)
+
+	func get_voxels():
+		return VoxelData.get_offset_voxels(voxels, offset)
 
 class VoxelMaterial:
 	var id: int
@@ -106,7 +116,7 @@ class VoxelNode:
 				frames[index] = VoxelFrame.new()
 			return frames[index]
 
-	func get_models(voxel: VoxelData, frame_index: int) -> Array:
+	func get_models(voxel: VoxelData, frame_index: int, ignore_trans: bool = false) -> Array:
 		if layerId in voxel.layers and not voxel.layers[layerId].isVisible:
 			return models
 		models.clear()
@@ -118,7 +128,7 @@ class VoxelNode:
 				WorkerThreadPool.wait_for_task_completion(task)
 			for i in child_nodes:
 				models.append_array(voxel.nodes[i].models)
-		get_frame(frame_index, true).merge_models(voxel, models)
+		get_frame(frame_index, true).merge_models(voxel, models, ignore_trans)
 		return models
 
 	const MaxSurface = 2
@@ -138,9 +148,10 @@ class VoxelNode:
 			surface.clear()
 		return result_mesh
 
-	func get_voxels(voxel: VoxelData, frame_index: int) -> Dictionary[Vector3i, int]:
+
+	func get_voxels(voxel: VoxelData, frame_index: int, center: bool = false) -> Dictionary[Vector3i, int]:
 		var voxels: Dictionary[Vector3i, int]
-		var models := get_models(voxel, frame_index)
+		var models := get_models(voxel, frame_index, center)
 		var half_step = Vector3(0.5, 0.5, 0.5);
 		for i in models.size():
 			var model: VoxelModel = models[i][0]
@@ -164,10 +175,12 @@ class VoxelFrame:
 		get(): return Transform3D(rotation if rotation else Quaternion.IDENTITY,
 			position if position else Vector3.ZERO)
 
-	func merge_models(voxel: VoxelData, models: Array[Array]):
+	func merge_models(voxel: VoxelData, models: Array[Array], ignore_trans: bool):
 		if model_id >= 0:
 			var model := voxel.models[model_id]
 			models.append([model, Transform3D.IDENTITY.translated(model.offset)])
+		if ignore_trans:
+			return
 		if rotation or position:
 			for i in models.size():
 				var model_transform: Transform3D = models[i][1]
