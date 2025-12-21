@@ -17,14 +17,8 @@ func _get_save_extension():
 func _get_resource_type():
 	return 'Mesh'
 
-func _get_import_options(path, preset):
+func _get_import_options(path, preset) -> Array[Dictionary]:
 	return [
-		{
-			name = mesh_mode,
-			default_value = MeshMode.Merge,
-			property_hint = PropertyHint.PROPERTY_HINT_ENUM,
-			hint_string = "Merge,Default"
-		},
 		{
 			name = scale,
 			default_value = 0.1,
@@ -62,22 +56,16 @@ func _get_import_options(path, preset):
 	]
 
 const frame_index := "mesh/frame_index"
-const mesh_mode := "mesh/mode"
 const scale := "mesh/scale"
 const unwrap_lightmap_uv2 := "mesh/unwrap_lightmap_uv2"
 const uv2_texel_size := "mesh/uv2_texel_size"
-const material_path := "material_path/material_path"
-const material_trans_path := "material_path/material_trans_path"
-const import_materials_textures := "material_path/import_materials_textures"
-
-enum MeshMode {
-	Merge,
-	Default,
-}
+const material_path := "material/material_path"
+const material_trans_path := "material/material_trans_path"
+const import_materials_textures := "material/import_materials_textures"
 
 func _import(source_file, save_path, options, _platforms, gen_files):
 	var mesh: ArrayMesh
-	mesh = VoxelMeshGenerator.new().generate(VoxAccess.Open(source_file).voxel, options, source_file)
+	mesh = VoxelMeshGenerator.generate_mesh(VoxAccess.Open(source_file).voxel, options, source_file)
 	if not mesh:
 		return FAILED
 	return ResourceSaver.save(mesh, "%s.%s" % [save_path, _get_save_extension()])

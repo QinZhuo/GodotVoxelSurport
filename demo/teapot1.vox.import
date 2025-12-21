@@ -12,9 +12,10 @@ dest_files=["res://.godot/imported/teapot1.vox-c245e5afe29415f48aab00fe6ace2323.
 
 [params]
 
-mesh/mode=0
 mesh/scale=0.1
 mesh/frame_index=0
 mesh/unwrap_lightmap_uv2=false
-material/import_materials_textures=false
-material/materials=[Resource("uid://l4wr43f2a4rn", "res://demo/cars_mat.tres")]
+mesh/uv2_texel_size=0.2
+material_path/import_materials_textures=false
+material_path/material_path=""
+material_path/material_trans_path=""

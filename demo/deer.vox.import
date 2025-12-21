@@ -12,9 +12,10 @@ dest_files=["res://.godot/imported/deer.vox-e5d415c2526e1668330e5e4349c72db6.mes
 
 [params]
 
-mesh/mode=0
 mesh/scale=0.1
 mesh/frame_index=0
 mesh/unwrap_lightmap_uv2=false
+mesh/uv2_texel_size=0.2
 material/import_materials_textures=false
-material/materials=[Resource("uid://l4wr43f2a4rn", "res://demo/cars_mat.tres")]
+material/material_path=""
+material/material_trans_path=""

@@ -12,10 +12,10 @@ dest_files=["res://.godot/imported/cars.vox-50fb7c6b40dc9527f5c5c77a52e50aba.mes
 
 [params]
 
-mesh/mode=0
 mesh/scale=0.1
 mesh/frame_index=0
 mesh/unwrap_lightmap_uv2=true
-material_path/import_materials_textures=true
-material_path/material_path=""
-material_path/material_trans_path=""
+mesh/uv2_texel_size=0.2
+material/import_materials_textures=false
+material/material_path=""
+material/material_trans_path=""

@@ -2,6 +2,98 @@ class_name VoxelMeshGenerator
 ## 体素网格生成器
 ## 会将数据分为6个方向 并多线程计算网格
 
+
+static func generate_mesh(voxel: VoxelData, options: Dictionary, path: String = "") -> ArrayMesh:
+	var gen := VoxelMeshGenerator.new(voxel, options, path)
+	gen.generate_materials(options)
+	var time := Time.get_ticks_usec()
+	gen.start_generate_mesh(voxel.get_voxels(gen.frame_index))
+	gen.wait_finished()
+	if not gen.mesh:
+		return null
+	if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
+		gen.mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
+	prints("generate_mesh mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", gen.mesh.get_faces().size() / 6, "face")
+	return gen.mesh
+
+static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: String = "") -> MeshLibrary:
+	var root_gen := VoxelMeshGenerator.new(voxel, options, path)
+	root_gen.generate_materials(options)
+	var time := Time.get_ticks_usec()
+	
+	var gens: Array[VoxelMeshGenerator]
+	var voxel_mesh_library := MeshLibrary.new()
+
+	match options[VoxelMeshLibraryImporter.mesh_mode]:
+		VoxelMeshLibraryImporter.MeshMode.split_by_model:
+			for model in voxel.models:
+				var gen := VoxelMeshGenerator.new(voxel, options, path)
+				gen.materials = root_gen.materials
+				gen.start_generate_mesh(model.voxels)
+				gens.append(gen)
+
+			for i in gens.size():
+				var child_mesh := gens[i].wait_finished()
+				if not child_mesh:
+					continue
+				var model := voxel.models[i]
+				child_mesh.resource_name = str(i)
+
+				if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
+					child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
+
+				voxel_mesh_library.create_item(i)
+				voxel_mesh_library.set_item_mesh(i, child_mesh)
+				if options[VoxelMeshLibraryImporter.import_meshes] and path:
+					ResourceSaver.save(child_mesh, path.get_basename() + "_" + child_mesh.resource_name + ".res")
+
+		VoxelMeshLibraryImporter.MeshMode.split_by_node:
+			var root_node := voxel.nodes[voxel.nodes[0].child_nodes[0]]
+			for node_id in root_node.child_nodes:
+				var gen := VoxelMeshGenerator.new(voxel, options, path)
+				gen.materials = root_gen.materials
+				gen.start_generate_mesh(voxel.nodes[node_id].get_voxels(voxel, root_gen.frame_index))
+				gens.append(gen)
+
+			for i in gens.size():
+				var child_mesh := gens[i].wait_finished()
+				if not child_mesh:
+					continue
+				var node := voxel.nodes[root_node.child_nodes[i]]
+				child_mesh.resource_name = node.get_name(voxel, root_gen.frame_index)
+
+				if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
+					child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
+
+				voxel_mesh_library.create_item(i)
+				voxel_mesh_library.set_item_mesh(i, child_mesh)
+				if options[VoxelMeshLibraryImporter.import_meshes] and path:
+					ResourceSaver.save(child_mesh, path.get_basename() + "_" + child_mesh.resource_name + ".res")
+
+		VoxelMeshLibraryImporter.MeshMode.split_by_frame:
+			for i in root_gen.frame_index + 1:
+				var gen := VoxelMeshGenerator.new(voxel, options, path)
+				gen.materials = root_gen.materials
+				gen.start_generate_mesh(voxel.get_voxels(i))
+				gens.append(gen)
+
+			for i in gens.size():
+				var child_mesh := gens[i].wait_finished()
+				if not child_mesh:
+					continue
+				child_mesh.resource_name = "frame_" + str(i)
+
+				if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
+					child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
+
+				voxel_mesh_library.create_item(i)
+				voxel_mesh_library.set_item_mesh(i, child_mesh)
+				if options[VoxelMeshLibraryImporter.import_meshes] and path:
+					ResourceSaver.save(child_mesh, path.get_basename() + "_" + child_mesh.resource_name + ".res")
+	
+	prints("generate_mesh_library mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms")
+	return voxel_mesh_library
+
 var pos_min: Vector3i
 var pos_max: Vector3i
 var slice_voxels: Array[Dictionary]
@@ -10,44 +102,17 @@ var tasks: Array
 var mesh: Mesh
 var voxel: VoxelData
 var frame_index: int
+var materials: Array[Material]
+var root_path: String
 
-func generate(voxel: VoxelData, options: Dictionary, path: String = "") -> ArrayMesh:
+
+func _init(voxel: VoxelData, options: Dictionary, path: String = "") -> void:
+	self.root_path = path
 	self.voxel = voxel
 	frame_index = options[VoxelMeshImporter.frame_index]
 	scale = options[VoxelMeshImporter.scale]
 	if scale <= 0:
 		scale = 0.01
-	
-	var time = Time.get_ticks_usec()
-	match options[VoxelMeshImporter.mesh_mode]:
-		VoxelMeshImporter.MeshMode.Merge:
-			start_generate_mesh(voxel.get_voxels(frame_index), voxel)
-			wait_finished()
-		VoxelMeshImporter.MeshMode.Default:
-			voxel.generate_models_mesh()
-			mesh = voxel.get_mesh(frame_index)
-			change_mesh_scale(scale)
-	if not mesh:
-		return null
-
-	if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
-		mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
-	
-	if options[VoxelMeshImporter.import_materials_textures]:
-		var mat := generate_material(path)
-		mesh.surface_set_material(0, mat)
-		if mesh.get_surface_count() > 1:
-			var trans_mat := generate_material_trans(mat, path)
-			mesh.surface_set_material(1, trans_mat)
-	else:
-		if options[VoxelMeshImporter.material_path]:
-			mesh.surface_set_material(0, ResourceLoader.load(options[VoxelMeshImporter.material_path]))
-		if options[VoxelMeshImporter.material_trans_path]:
-			mesh.surface_set_material(1, ResourceLoader.load(options[VoxelMeshImporter.material_trans_path]))
-
-	prints("generate mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms", mesh.get_faces().size() / 6, "face")
-
-	return mesh
 
 func change_mesh_scale(scale: float):
 	if mesh:
@@ -60,6 +125,13 @@ func change_mesh_scale(scale: float):
 			mesh_tool.commit_to_surface(new_mesh, si)
 		mesh = new_mesh
 
+
+func generate_materials(options: Dictionary) -> Array[Material]:
+	materials.resize(2)
+	var path := root_path if options[VoxelMeshImporter.import_materials_textures] else ""
+	materials[0] = generate_material(path)
+	materials[1] = generate_material_trans(materials[0], path)
+	return materials
 
 func generate_material(save_path: String = "") -> StandardMaterial3D:
 	var path := save_path.get_basename() + '_mat.tres'
@@ -123,8 +195,7 @@ func generate_emission_textrue(save_path: String = "") -> ImageTexture:
 	return _generate_texture(func(m): return m.color * m.emission, save_path, "emission")
 
 
-func start_generate_mesh(voxels: Dictionary[Vector3i, int], voxel: VoxelData) -> void:
-	self.voxel = voxel
+func start_generate_mesh(voxels: Dictionary[Vector3i, int]) -> void:
 	pos_min = Vector3i.MAX
 	pos_max = Vector3i.MIN
 	
@@ -165,6 +236,7 @@ func wait_finished() -> ArrayMesh:
 					var child_mesh: ArrayMesh = task.meshes[i]
 					if child_mesh.get_surface_count() > 0:
 						surface.append_from(child_mesh, 0, Transform3D.IDENTITY)
+			surface.set_material(materials[i])
 			surface.commit(mesh)
 			surface.clear()
 		tasks.clear()

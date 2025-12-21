@@ -4,7 +4,9 @@ extends EditorPlugin
 var importers: Array[EditorImportPlugin]
 
 func _enter_tree():
-	importers.append(VoxelMeshImporter.new())
+	importers.append(preload("res://addons/VoxelSurport/Importers/VoxelNoopImporter.gd").new())
+	importers.append(preload("res://addons/VoxelSurport/Importers/VoxelMeshImporter.gd").new())
+	importers.append(preload("res://addons/VoxelSurport/Importers/VoxelMeshLibraryImporter.gd").new())
 	for importer in importers:
 		add_import_plugin(importer)
 

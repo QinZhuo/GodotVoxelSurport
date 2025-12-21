@@ -58,6 +58,7 @@ func _init(file: FileAccess):
 		voxel.materials[i] = VoxelData.VoxelMaterial.new()
 	while file.get_position() < file.get_length():
 		read_chunk()
+	voxel.check_nodes()
 
 var voxel: VoxelData
 var _file: FileAccess
@@ -71,7 +72,10 @@ func read_chunk():
 		"SIZE":
 			var model := VoxelData.VoxelModel.new()
 			voxel.models.append(model)
-			model.size = _get_vector3i()
+			var x := _get_32()
+			var y := _get_32()
+			var z := _get_32()
+			model.size = Vector3i(x, z, y)
 		"XYZI":
 			var model := voxel.models.back()
 			var num_voxels = _get_32()
@@ -157,12 +161,6 @@ func _get_32() -> int:
 func _get_string(length) -> String:
 	return _file.get_buffer(length).get_string_from_ascii()
 
-func _get_vector3i() -> Vector3i:
-	var x := _get_32()
-	var y := _get_32()
-	var z := _get_32()
-	return Vector3i(x, z, -y)
-
 func _get_dictionary() -> Dictionary[String, String]:
 	var dictionary: Dictionary[String, String]
 	for _p in range(_get_32()):
@@ -173,6 +171,8 @@ func _get_dictionary() -> Dictionary[String, String]:
 func _get_node() -> VoxelData.VoxelNode:
 	var node := VoxelData.VoxelNode.new()
 	node.id = _get_32()
-	node.attributes = _get_dictionary()
+	var attributes := _get_dictionary()
+	if attributes.has("_name"):
+		node.name = attributes.get("_name")
 	voxel.nodes[node.id] = node
 	return node
