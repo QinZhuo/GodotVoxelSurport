@@ -20,7 +20,7 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 	var root_gen := VoxelMeshGenerator.new(voxel, options, path)
 	root_gen.generate_materials(options)
 	var time := Time.get_ticks_usec()
-	
+
 	var gens: Array[VoxelMeshGenerator]
 	var voxel_mesh_library := MeshLibrary.new()
 
@@ -29,25 +29,28 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 			for i in voxel.models.size():
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				gen.start_generate_mesh(voxel.models[i].get_voxels(), "model_" + str(i))
+				gen.mesh = _get_mesh("model_" + str(i), path, options)
+				gen.start_generate_mesh(voxel.models[i].get_voxels())
 				gens.append(gen)
-					
+
 		VoxelMeshLibraryImporter.MeshMode.split_by_node:
 			var root_node := voxel.nodes[voxel.nodes[0].child_nodes[0]]
 			for node_id in root_node.child_nodes:
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
 				var node := voxel.nodes[node_id]
-				gen.start_generate_mesh(node.get_voxels(voxel, root_gen.frame_index, true), node.get_name(voxel, root_gen.frame_index))
+				gen.mesh = _get_mesh(node.get_name(voxel, root_gen.frame_index), path, options)
+				gen.start_generate_mesh(node.get_voxels(voxel, root_gen.frame_index, true), )
 				gens.append(gen)
-					
+
 		VoxelMeshLibraryImporter.MeshMode.split_by_frame:
 			for i in root_gen.frame_index + 1:
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				gen.start_generate_mesh(voxel.get_voxels(i), "frame_" + str(i))
+				gen.mesh = _get_mesh("frame_" + str(i), path, options)
+				gen.start_generate_mesh(voxel.get_voxels(i))
 				gens.append(gen)
-	
+
 	for i in gens.size():
 		var child_mesh := gens[i].wait_finished()
 		if not child_mesh:
@@ -57,26 +60,30 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 		voxel_mesh_library.create_item(i)
 		voxel_mesh_library.set_item_mesh(i, child_mesh)
 		if options[VoxelMeshLibraryImporter.import_meshes] and path:
-			DirAccess.make_dir_absolute(path.get_basename())
-			var child_path := path.get_basename() + "/" + child_mesh.resource_name + ".res"
-			ResourceSaver.save(child_mesh, child_path)
-			child_mesh.take_over_path(child_path)
-	reload_scenes()
+			ResourceSaver.save(child_mesh)
+
 	prints("generate_mesh_library mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	return voxel_mesh_library
 
-static func reload_scenes():
-	var scenes := EditorInterface.get_open_scenes()
-	for scene in scenes:
-		if scene and not scene.is_empty():
-			EditorInterface.reload_scene_from_path(scene)
+static func _get_mesh(name: String, path: String, options: Dictionary) -> ArrayMesh:
+	if options[VoxelMeshLibraryImporter.import_meshes] and path:
+		DirAccess.make_dir_absolute(path.get_basename())
+		var child_path := path.get_basename() + "/" + name + ".res"
+		var mesh := ResourceLoader.load(child_path) as ArrayMesh
+		if not mesh:
+			mesh = ArrayMesh.new()
+			mesh.resource_path = child_path
+			mesh.resource_name = name
+		return mesh
+	else:
+		return ArrayMesh.new()
 
 var pos_min: Vector3i
 var pos_max: Vector3i
 var slice_voxels: Array[Dictionary]
 var scale: float = 1
 var tasks: Array
-var mesh: Mesh
+var mesh: ArrayMesh
 var voxel: VoxelData
 var frame_index: int
 var materials: Array[Material]
@@ -112,8 +119,13 @@ func generate_materials(options: Dictionary) -> Array[Material]:
 
 func generate_material(save_path: String = "") -> StandardMaterial3D:
 	var path := save_path.get_basename() + '/mat.tres'
-	DirAccess.make_dir_absolute(save_path.get_basename())
+	if save_path:
+		DirAccess.make_dir_absolute(save_path.get_basename())
 	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
+	var materials_hash := voxel.materials.hash()
+	if material.has_meta("hash") and material.get_meta("hash") == materials_hash:
+		return material
+	material.set_meta("hash", materials_hash)
 	if material is StandardMaterial3D:
 		material.emission_enabled = true
 		material.emission_energy_multiplier = 20
@@ -175,13 +187,18 @@ func generate_emission_textrue(save_path: String = "") -> ImageTexture:
 	return _generate_texture(func(m: VoxelData.VoxelMaterial): return m.color * m.emission, save_path, "emission")
 
 
-func start_generate_mesh(voxels: Dictionary[Vector3i, int], resource_name: String = "") -> void:
-	mesh = ArrayMesh.new()
-	if resource_name:
-		mesh.resource_name = resource_name
+func start_generate_mesh(voxels: Dictionary[Vector3i, int]) -> void:
+	var voxels_hash := voxels.hash()
+	if not mesh:
+		mesh = ArrayMesh.new()
+	else:
+		if mesh.has_meta("hash") and voxels_hash == mesh.get_meta("hash"):
+			return
+		mesh.clear_surfaces()
+	mesh.set_meta("hash", voxels_hash)
 	pos_min = Vector3i.MAX
 	pos_max = Vector3i.MIN
-	
+
 	if voxels.size() == 0:
 		return
 
@@ -205,7 +222,7 @@ func start_generate_mesh(voxels: Dictionary[Vector3i, int], resource_name: Strin
 		var task = {dir = dir}
 		tasks.append(task)
 		task.id = WorkerThreadPool.add_task(_generate_dir_face.bind(task))
-		
+
 func wait_finished() -> ArrayMesh:
 	if tasks.size() > 0:
 		var surface := SurfaceTool.new()
@@ -251,10 +268,10 @@ func _get_dir_visible_slice_voxels(slices: Dictionary, axis: Vector3i, dir: int,
 	var offset := Vector3i(FaceTool.Normals[dir])
 	var slice: Dictionary = slices[slice_index]
 	var dir_slice_index := slice_index + offset[axis.x]
-	
+
 	if not slices.has(dir_slice_index):
 		return slice.duplicate()
-	
+
 	var dir_slice = slices[dir_slice_index]
 	for pos: Vector3i in slice:
 		var visible := false
@@ -284,14 +301,14 @@ func _generate_voxel_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i,
 func _generate_size_dir_face(voxels: Dictionary, axis: Vector3i, pos: Vector3i, size: Vector3, dir: int, surfaces: Array[SurfaceTool]):
 	var id: int = voxels[pos]
 	var uv := Vector2((id + 0.5) / 256.0, 0.5)
-	
+
 	var surface := surfaces[0] if not voxel.materials[id].is_transparent else surfaces[1]
 
 	surface.set_normal(FaceTool.Normals[dir])
 	for point: Vector3 in FaceTool.Faces[dir]:
 		surface.set_uv(uv)
 		surface.add_vertex((point * size + Vector3(pos)) * scale)
-	
+
 	var cur_pos := pos
 	var y_max := size[axis.y]
 	var z_max := size[axis.z]
@@ -308,7 +325,7 @@ func _get_max_length(voxels: Dictionary, pos: Vector3i, axis: int, max_length: i
 	var cur_pos: Vector3i = pos
 	cur_pos[axis] += 1
 	var size := 1
-	
+
 	while voxels.has(cur_pos) and voxels[cur_pos] == value:
 		cur_pos[axis] += 1
 		size += 1
@@ -321,7 +338,7 @@ func _get_max_width(voxels: Dictionary, pos: Vector3i, width_axis: int, length_a
 	var cur_pos: Vector3i = pos
 	cur_pos[width_axis] += 1
 	var size := 1
-	
+
 	while voxels.has(cur_pos) and voxels[cur_pos] == value and _get_max_length(voxels, cur_pos, length_axis, length) >= length:
 		cur_pos[width_axis] += 1
 		size += 1

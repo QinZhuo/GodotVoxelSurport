@@ -78,11 +78,11 @@ class VoxelNode:
 	var id: int
 
 	var name: String
-	
+
 	var layerId := -1
-	
+
 	var child_nodes: Array[int]
-	
+
 	var frames: Dictionary[int, VoxelFrame]
 
 	var models: Array[Array]
@@ -98,7 +98,7 @@ class VoxelNode:
 			return str("node_", id)
 		else:
 			return name
-	
+
 	func get_frame(index: int, merge: bool = false) -> VoxelFrame:
 		if merge:
 			if index == 0 and frames.size() > 0:
@@ -164,9 +164,9 @@ class VoxelNode:
 
 class VoxelFrame:
 	var model_id := -1
-	
+
 	var position = null
-	
+
 	var rotation = null
 
 	var transform: Transform3D:
@@ -198,5 +198,5 @@ class VoxelFrame:
 
 class VoxelLayer:
 	var id: int;
-	
+
 	var isVisible: bool;
