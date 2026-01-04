@@ -69,7 +69,7 @@ static func _get_mesh(name: String, path: String, options: Dictionary) -> ArrayM
 	if options[VoxelMeshLibraryImporter.import_meshes] and path:
 		DirAccess.make_dir_absolute(path.get_basename())
 		var child_path := path.get_basename() + "/" + name + ".res"
-		var mesh := ResourceLoader.load(child_path) as ArrayMesh
+		var mesh := ResourceLoader.load(child_path) as ArrayMesh if FileAccess.file_exists(path) else null
 		if not mesh:
 			mesh = ArrayMesh.new()
 			mesh.resource_path = child_path
