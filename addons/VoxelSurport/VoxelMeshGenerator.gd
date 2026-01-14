@@ -122,10 +122,6 @@ func generate_material(save_path: String = "") -> StandardMaterial3D:
 	if save_path:
 		DirAccess.make_dir_absolute(save_path.get_basename())
 	var material: Material = ResourceLoader.load(path) if FileAccess.file_exists(path) else StandardMaterial3D.new()
-	var materials_hash := voxel.materials.hash()
-	if material.has_meta("hash") and material.get_meta("hash") == materials_hash:
-		return material
-	material.set_meta("hash", materials_hash)
 	if material is StandardMaterial3D:
 		material.emission_enabled = true
 		material.emission_energy_multiplier = 20
