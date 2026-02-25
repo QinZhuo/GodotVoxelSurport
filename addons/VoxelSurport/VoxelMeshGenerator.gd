@@ -8,7 +8,7 @@ static func generate_mesh(voxel: VoxelData, options: Dictionary, path: String = 
 	gen.generate_materials(options)
 	var time := Time.get_ticks_usec()
 	gen.start_generate_mesh(voxel.get_voxels(gen.frame_index))
-	gen.wait_finished()
+	gen.wait_finished(options[VoxelMeshImporter.unwrap_lightmap_uv2], options[VoxelMeshImporter.uv2_texel_size])
 	if not gen.mesh:
 		return null
 	if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
@@ -35,10 +35,16 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 
 		VoxelMeshLibraryImporter.MeshMode.split_by_node:
 			var root_node := voxel.nodes[voxel.nodes[0].child_nodes[0]]
+			var gen_nodes: Array[String]
 			for node_id in root_node.child_nodes:
+				var node := voxel.nodes[node_id]
+				if node.name:
+					if gen_nodes.has(node.name):
+						printerr("Nodes cannot have the same name [", node.name, "] path: ", path)
+						continue
+					gen_nodes.append(node.name)
 				var gen := VoxelMeshGenerator.new(voxel, options, path)
 				gen.materials = root_gen.materials
-				var node := voxel.nodes[node_id]
 				gen.mesh = _get_mesh(node.get_name(voxel, root_gen.frame_index), path, options)
 				gen.start_generate_mesh(node.get_voxels(voxel, root_gen.frame_index, true), )
 				gens.append(gen)
@@ -52,11 +58,9 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 				gens.append(gen)
 
 	for i in gens.size():
-		var child_mesh := gens[i].wait_finished()
+		var child_mesh := gens[i].wait_finished(options[VoxelMeshImporter.unwrap_lightmap_uv2], options[VoxelMeshImporter.uv2_texel_size])
 		if not child_mesh:
 			continue
-		if options[VoxelMeshImporter.unwrap_lightmap_uv2]:
-			child_mesh.lightmap_unwrap(Transform3D.IDENTITY, options[VoxelMeshImporter.uv2_texel_size])
 		voxel_mesh_library.create_item(i)
 		voxel_mesh_library.set_item_mesh(i, child_mesh)
 		if options[VoxelMeshLibraryImporter.import_meshes] and path:
@@ -219,7 +223,7 @@ func start_generate_mesh(voxels: Dictionary[Vector3i, int]) -> void:
 		tasks.append(task)
 		task.id = WorkerThreadPool.add_task(_generate_dir_face.bind(task))
 
-func wait_finished() -> ArrayMesh:
+func wait_finished(gen_uv2: bool, uv2_texel_size: float) -> ArrayMesh:
 	if tasks.size() > 0:
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -235,6 +239,8 @@ func wait_finished() -> ArrayMesh:
 			surface.commit(mesh)
 			surface.clear()
 		tasks.clear()
+		if gen_uv2:
+			mesh.lightmap_unwrap(Transform3D.IDENTITY, uv2_texel_size)
 	return mesh
 
 func _generate_dir_face(task) -> void:
