@@ -38,6 +38,6 @@ func _get_import_options(path, preset) -> Array[Dictionary]:
 			default_value = false,
 		}])
 	return options
-	
+
 func _import(source_file, save_path, options, _platforms, gen_files):
 	return ResourceSaver.save(VoxelMeshGenerator.generate_mesh_library(VoxAccess.Open(source_file).voxel, options, source_file), "%s.%s" % [save_path, _get_save_extension()])

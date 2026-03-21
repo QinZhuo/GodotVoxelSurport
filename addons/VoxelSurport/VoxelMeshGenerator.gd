@@ -22,8 +22,9 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 	var time := Time.get_ticks_usec()
 
 	var gens: Array[VoxelMeshGenerator]
-	var voxel_mesh_library := MeshLibrary.new()
-
+	var voxel_mesh_library: MeshLibrary = ResourceLoader.load(path) if FileAccess.file_exists(path) else null
+	if not voxel_mesh_library:
+		MeshLibrary.new()
 	match options[VoxelMeshLibraryImporter.mesh_mode]:
 		VoxelMeshLibraryImporter.MeshMode.split_by_model:
 			for i in voxel.models.size():
@@ -57,15 +58,24 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 				gen.start_generate_mesh(voxel.get_voxels(i))
 				gens.append(gen)
 
+	var old_meshes: Array[ArrayMesh]
+	for i in voxel_mesh_library.get_item_list():
+		old_meshes.append(voxel_mesh_library.get_item_mesh(i))
+	voxel_mesh_library.clear()
 	for i in gens.size():
 		var child_mesh := gens[i].wait_finished(options[VoxelMeshImporter.unwrap_lightmap_uv2], options[VoxelMeshImporter.uv2_texel_size])
 		if not child_mesh:
 			continue
 		voxel_mesh_library.create_item(i)
 		voxel_mesh_library.set_item_mesh(i, child_mesh)
+		voxel_mesh_library.set_item_name(i, child_mesh.resource_name)
 		if options[VoxelMeshLibraryImporter.import_meshes] and path:
 			ResourceSaver.save(child_mesh)
-
+	for old_mesh in old_meshes:
+		var i := voxel_mesh_library.find_item_by_name(old_mesh.resource_name)
+		if i < 0:
+			DirAccess.remove_absolute(old_mesh.resource_path)
+			printerr("delete ", old_mesh.resource_path)
 	prints("generate_mesh_library mesh: ", (Time.get_ticks_usec() - time) / 1000.0, "ms")
 	return voxel_mesh_library
 
