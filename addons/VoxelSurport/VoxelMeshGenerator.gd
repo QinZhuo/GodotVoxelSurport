@@ -60,7 +60,9 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 
 	var old_meshes: Array[ArrayMesh]
 	for i in voxel_mesh_library.get_item_list():
-		old_meshes.append(voxel_mesh_library.get_item_mesh(i))
+		var old_mesh := voxel_mesh_library.get_item_mesh(i)
+		if old_mesh:
+			old_meshes.append(old_mesh)
 	voxel_mesh_library.clear()
 	for i in gens.size():
 		var child_mesh := gens[i].wait_finished(options[VoxelMeshImporter.unwrap_lightmap_uv2], options[VoxelMeshImporter.uv2_texel_size])
