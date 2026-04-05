@@ -24,7 +24,7 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 	var gens: Array[VoxelMeshGenerator]
 	var voxel_mesh_library: MeshLibrary = ResourceLoader.load(path) if FileAccess.file_exists(path) else null
 	if not voxel_mesh_library:
-		MeshLibrary.new()
+		voxel_mesh_library = MeshLibrary.new()
 	match options[VoxelMeshLibraryImporter.mesh_mode]:
 		VoxelMeshLibraryImporter.MeshMode.split_by_model:
 			for i in voxel.models.size():
