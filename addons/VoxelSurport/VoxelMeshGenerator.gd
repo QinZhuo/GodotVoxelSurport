@@ -22,7 +22,8 @@ static func generate_mesh_library(voxel: VoxelData, options: Dictionary, path: S
 	var time := Time.get_ticks_usec()
 
 	var gens: Array[VoxelMeshGenerator]
-	var voxel_mesh_library: MeshLibrary = ResourceLoader.load(path) if FileAccess.file_exists(path) else null
+	var res: Resource = ResourceLoader.load(path) if FileAccess.file_exists(path) else null
+	var voxel_mesh_library: MeshLibrary = res if res is MeshLibrary else null
 	if not voxel_mesh_library:
 		voxel_mesh_library = MeshLibrary.new()
 	match options[VoxelMeshLibraryImporter.mesh_mode]:
